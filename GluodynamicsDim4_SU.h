@@ -75,7 +75,7 @@ class PeriodicGluodynamicsDim4_SU_Base
                                         (int i , int j , int k , int l , int d);
 
 
-        bool MetropolisHit(int i , int j , int k , int l , int d,
+        bool MetropolisHit(int i, int j, int k, int l, int d,
                                             MatrixSU<Float, PrngClass> *Usim);
         unsigned int SmallMonteCarloStep(unsigned int number_of_hits);
         float MonteCarloStep(float number_of_steps,
@@ -389,7 +389,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 MatrixSU<Float, PrngClass> * PeriodicGluodynamicsDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-            ::PrecalculatedPlaquettes(int i , int j , int k , int l , int d) {
+            ::PrecalculatedPlaquettes(int i, int j, int k, int l, int d) {
     MatrixSU<Float, PrngClass> *Usim;
     Usim = new MatrixSU<Float, PrngClass>[6];
     for (int i = 0; i < 6; i++) {
@@ -542,7 +542,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 bool PeriodicGluodynamicsDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                        ::MetropolisHit(int i , int j , int k , int l , int d,
+                        ::MetropolisHit(int i, int j, int k, int l, int d,
                                             MatrixSU<Float, PrngClass> *Usim) {
     MatrixSU<Float, PrngClass> rand_matrix;
     Float epsilon = (1.0/beta < 0.5) ? (1.0/beta) : 0.5;
@@ -602,6 +602,8 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
         }
     }
 
+    delete [] Usim;
+
     return number_of_changes;
 }
 
@@ -657,6 +659,8 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 //    MatrixSU<Float, PrngClass> ZXC(0);
 //    m[i][j][k][l].up(d) = MatrixSU<Float, PrngClass>(0, rand_gen()).;
     m[i][j][k][l].up(d).HeatBathMatrix(rand_gen(), beta, Usim);
+
+    delete [] Usim;
 
 //    cout << '$';
     return 1;
@@ -724,6 +728,8 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
         }
     }
 
+    delete [] Usim;
+
     return number_of_changes;
 }
 
@@ -788,6 +794,8 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
             number_of_changes++;
         }
     }
+
+    delete [] Usim;
 
     return number_of_changes;
 }

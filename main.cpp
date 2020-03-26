@@ -18,20 +18,20 @@ using namespace std;
 typedef PeriodicGluodynamicsDim4_SU<MatrixSU2, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
 const int matr_dim = 2;
-const char bc_code = 'p';
+const char bc_code = 'p'; //boundary conditions code
 const char system_preconfiguration_file_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/%d%d%d%d%cSU%dSystem_%d.save";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
 const char system_log_file_for_beta_preeq_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d.csv";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d.csv";
 const char system_configuration_file_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 const char system_measurements_file_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/Measured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
 const char system_single_measurement_file_format[500] =
-    "/media/user/LinuxDATA/GluodynamicsDATA/Measured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
-//   /media/user/LinuxDATA/
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
+//   /media/dimaros/LinuxDATA/
 //   /home/itep/sychev/
 
 void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
@@ -39,9 +39,9 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-    char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(file_name, ios::out | ios::app);
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
     char file_name_in[500];
@@ -75,7 +75,7 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
         out_loc << "eq," << beta << ',' << t + int(T_preequilibration/tau) << ',' << s << ',' << hit_ratio << ','
             << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
 
@@ -111,7 +111,7 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
         out_loc << beta << ',' << t << ',' << s << ',' << hit_ratio << ','
             << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
     out_loc.close();
@@ -206,17 +206,16 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-    char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
-                                    bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(file_name, ios::out | ios::app);
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
+            bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in,
-        system_configuration_file_format,
+        sprintf(file_name_in, system_configuration_file_format,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
@@ -228,6 +227,7 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
         for (int i = 0; i < N_loops; i++) {
             for (int j = 0; j <= i; j++) {
                 W[i][j][t] = System.AverageWilsonLoop(i+1, j+1);
+                W[j][i][t] = W[i][j][t];
             }
         }
 
@@ -239,7 +239,7 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
         out_loc << beta << ',' << t << ',' << s[t]
                     << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
     out_loc.close();
@@ -428,10 +428,7 @@ void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
 
                         W_jack[thread_id][i][j][t_jack] += W[thread_id][i][j][t];
                     }
-                }
-            }
-            for (int i = 0; i < N_loops; i++) {
-                for (int j = 0; j <= i; j++) {
+
                     W_jack[thread_id][i][j][t_jack] /= T_measurement/tau - 1;
                     W_jack[thread_id][j][i][t_jack] = W_jack[thread_id][i][j][t_jack];
                 }
@@ -2506,9 +2503,9 @@ int main() {
 
 
 
-    Equilibration(key);
+//    Equilibration(key);
 
-//    Measurement(key);
+    Measurement(key);
 
 
 
