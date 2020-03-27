@@ -72,7 +72,7 @@ class PeriodicGluodynamicsDim4_SU_Base
         virtual MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
                                                             int direction) = 0;
         MatrixSU<Float, PrngClass> *PrecalculatedPlaquettes
-                                        (int i , int j , int k , int l , int d);
+                                        (int i, int j, int k, int l, int d);
 
 
         bool MetropolisHit(int i, int j, int k, int l, int d,

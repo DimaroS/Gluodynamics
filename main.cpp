@@ -13,7 +13,7 @@ using namespace std;
 
 //1.73458666666667 for 3x3x3x8 pSU3
 
-//new comment
+
 
 typedef PeriodicGluodynamicsDim4_SU<MatrixSU2, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
@@ -835,7 +835,7 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
 
 //  odd layers updates then even layers updates
 void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
-            int iBeta, int thread_id, double *s, double **timeslice_energy) {
+            int iBeta, int thread_id, double *s, double **timeslice_observable) {
     float beta = 0.01*iBeta;
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
@@ -865,8 +865,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 
         char file_name_out_measured[500];
 
-        sprintf(file_name_out_measured,
-        system_single_measurement_file_format,
+        sprintf(file_name_out_measured, system_single_measurement_file_format,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
         ofstream out_mes;
@@ -880,12 +879,12 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
         s[t] = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
 
         for (int timeslice = 0; timeslice < N4; timeslice += 2) {
-            timeslice_energy[timeslice][t] = 0.0;
+            timeslice_observable[timeslice][t] = 0.0;
             for (int step = 0; step < level_I_number_of_measurements; step++) {
                 for (int i = 0; i < N1; i++) {
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
-                            timeslice_energy[timeslice][t] +=
+                            timeslice_observable[timeslice][t] +=
     //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
                                             + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
@@ -898,7 +897,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 
                 System.Timeslice_I_MonteCarloStep(level_I_tau, level_I_multihit_number, timeslice, 0);
             }
-            timeslice_energy[timeslice][t] /= level_I_number_of_measurements;
+            timeslice_observable[timeslice][t] /= level_I_number_of_measurements;
         }
 
 
@@ -909,12 +908,12 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 
 
         for (int timeslice = 1; timeslice < N4; timeslice += 2) {
-            timeslice_energy[timeslice][t] = 0.0;
+            timeslice_observable[timeslice][t] = 0.0;
             for (int step = 0; step < level_I_number_of_measurements; step++) {
                 for (int i = 0; i < N1; i++) {
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
-                            timeslice_energy[timeslice][t] +=
+                            timeslice_observable[timeslice][t] +=
     //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
                                             + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
@@ -927,7 +926,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 
                 System.Timeslice_I_MonteCarloStep(level_I_tau, level_I_multihit_number, timeslice, 0);
             }
-            timeslice_energy[timeslice][t] /= level_I_number_of_measurements;
+            timeslice_observable[timeslice][t] /= level_I_number_of_measurements;
         }
 
 //
@@ -938,12 +937,12 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 //
 //
 //        for (int timeslice = 2; timeslice < N4; timeslice += 4) {
-//            timeslice_energy[timeslice][t] = 0.0;
+//            timeslice_observable[timeslice][t] = 0.0;
 //            for (int step = 0; step < level_I_number_of_measurements; step++) {
 //                for (int i = 0; i < N1; i++) {
 //                    for (int j = 0; j < N2; j++) {
 //                        for (int k = 0; k < N3; k++) {
-//                            timeslice_energy[timeslice][t] +=
+//                            timeslice_observable[timeslice][t] +=
 //    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
 //                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
 //    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
@@ -956,7 +955,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 //
 //                System.Timeslice_I_MonteCarloStep(level_I_tau, level_I_multihit_number, timeslice, 2);
 //            }
-//            timeslice_energy[timeslice][t] /= level_I_number_of_measurements;
+//            timeslice_observable[timeslice][t] /= level_I_number_of_measurements;
 //        }
 //
 //
@@ -966,14 +965,14 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 //
 //
 //        for (int timeslice = 3; timeslice < N4; timeslice += 4) {
-//            timeslice_energy[timeslice][t] = 0.0;
+//            timeslice_observable[timeslice][t] = 0.0;
 ////            double se[level_I_number_of_measurements];
 //            for (int step = 0; step < level_I_number_of_measurements; step++) {
-////                se[step] = -timeslice_energy[timeslice][t];
+////                se[step] = -timeslice_observable[timeslice][t];
 //                for (int i = 0; i < N1; i++) {
 //                    for (int j = 0; j < N2; j++) {
 //                        for (int k = 0; k < N3; k++) {
-//                            timeslice_energy[timeslice][t] +=
+//                            timeslice_observable[timeslice][t] +=
 //    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
 //                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
 //    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
@@ -983,7 +982,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 //                        }
 //                    }
 //                }
-////                se[step] += timeslice_energy[timeslice][t];
+////                se[step] += timeslice_observable[timeslice][t];
 //                System.Timeslice_I_MonteCarloStep(level_I_tau, level_I_multihit_number, timeslice, 0);
 //            }
 ////
@@ -1057,11 +1056,11 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 ////            cout << se_av << ' ' << se_d << '\n';
 //
 //
-//            timeslice_energy[timeslice][t] /= level_I_number_of_measurements;
+//            timeslice_observable[timeslice][t] /= level_I_number_of_measurements;
 //        }
 
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            out_mes.write((const char *) &timeslice_energy[timeslice][t],
+            out_mes.write((const char *) &timeslice_observable[timeslice][t],
                             sizeof(double));
         }
         out_mes.write((const char *) &s[t], sizeof(double));
@@ -1082,18 +1081,18 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v1 (unsigned int key,
 }
 
 void MeasureScalarGlueballForBeta_v1_processing (unsigned int key, int iBeta,
-                double s_av, double s_d, double tau_corr_av,
-                double ***timeslice_energy,
-                double timeslice_energy_av, double timeslice_energy_d,
-                double ***timeslice_energy_corr_product,
-                double **timeslice_energy_corr_product_jack,
-                double *timeslice_energy_jack,
-                double **timeslice_energy_corr_normed_jack,
-                double *timeslice_energy_corr_normed_av,
-                double *timeslice_energy_corr_normed_d,
-                double ***timeslice_energy_corr_normed_old,
-                double *timeslice_energy_corr_normed_av_old,
-                double *timeslice_energy_corr_normed_d_old
+                                                 double s_av, double s_d, double tau_corr_av,
+                                                 double ***timeslice_observable,
+                                                 double timeslice_observable_av, double timeslice_observable_d,
+                                                 double ***timeslice_observable_corr_product,
+                                                 double **timeslice_observable_corr_product_jack,
+                                                 double *timeslice_observable_jack,
+                                                 double **timeslice_observable_corr_normed_jack,
+                                                 double *timeslice_observable_corr_normed_av,
+                                                 double *timeslice_observable_corr_normed_d,
+                                                 double ***timeslice_observable_corr_normed_old,
+                                                 double *timeslice_observable_corr_normed_av_old,
+                                                 double *timeslice_observable_corr_normed_d_old
                                                                             ) {
     float beta = 0.01*iBeta;
 
@@ -1109,14 +1108,14 @@ void MeasureScalarGlueballForBeta_v1_processing (unsigned int key, int iBeta,
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int t = 0; t < int(T_measurement/tau); t++) {
             for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff][t] = 0.0;
+                timeslice_observable_corr_product[thread_id][timeslice_diff][t] = 0.0;
                 for (int timeslice_base = 0; timeslice_base < N4; timeslice_base++) {
-                    timeslice_energy_corr_product[thread_id][timeslice_diff][t] +=
-                        timeslice_energy[thread_id][timeslice_base][t]
-                        *timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t];
+                    timeslice_observable_corr_product[thread_id][timeslice_diff][t] +=
+                            timeslice_observable[thread_id][timeslice_base][t]
+                            * timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t];
                 }
 
-                timeslice_energy_corr_product[thread_id][timeslice_diff][t] /= N4;
+                timeslice_observable_corr_product[thread_id][timeslice_diff][t] /= N4;
             }
         }
     }
@@ -1129,26 +1128,26 @@ void MeasureScalarGlueballForBeta_v1_processing (unsigned int key, int iBeta,
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
         for (int thread_id_base = 0; thread_id_base < threads_per_beta; thread_id_base++) {
-            timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base] = 0.0;
+            timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base] = 0.0;
             for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
                 if (thread_id == thread_id_base) {
                     continue;
                 }
 
                 for (int t = 0; t < int(T_measurement/tau); t++) {
-                    timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base]
-                                    += timeslice_energy_corr_product[thread_id][timeslice_diff][t];
+                    timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base]
+                                    += timeslice_observable_corr_product[thread_id][timeslice_diff][t];
                 }
             }
 
-            timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base]
+            timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base]
                                     /= (threads_per_beta - 1)*T_measurement/tau;
         }
     }
 
 
     for (int thread_id_base = 0; thread_id_base < threads_per_beta; thread_id_base++) {
-        timeslice_energy_jack[thread_id_base] = 0.0;
+        timeslice_observable_jack[thread_id_base] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             if (thread_id == thread_id_base) {
                 continue;
@@ -1156,45 +1155,45 @@ void MeasureScalarGlueballForBeta_v1_processing (unsigned int key, int iBeta,
 
             for (int timeslice = 0; timeslice < N4; timeslice++) {
                 for (int t = 0; t < int(T_measurement/tau); t++) {
-                    timeslice_energy_jack[thread_id_base] += timeslice_energy[thread_id][timeslice][t];
+                    timeslice_observable_jack[thread_id_base] += timeslice_observable[thread_id][timeslice][t];
                 }
             }
         }
 
-        timeslice_energy_jack[thread_id_base] /= (threads_per_beta - 1)*N4*T_measurement/tau;
+        timeslice_observable_jack[thread_id_base] /= (threads_per_beta - 1) * N4 * T_measurement / tau;
     }
 
 
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] =
-                timeslice_energy_corr_product_jack[timeslice_diff][thread_id]
-                /timeslice_energy_jack[thread_id]/timeslice_energy_jack[thread_id] - 1.0;
+            timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] =
+                    timeslice_observable_corr_product_jack[timeslice_diff][thread_id]
+                    / timeslice_observable_jack[thread_id] / timeslice_observable_jack[thread_id] - 1.0;
         }
     }
 
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_av[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_av[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_av[timeslice_diff] +=
-                timeslice_energy_corr_normed_jack[timeslice_diff][thread_id];
+            timeslice_observable_corr_normed_av[timeslice_diff] +=
+                timeslice_observable_corr_normed_jack[timeslice_diff][thread_id];
         }
-        timeslice_energy_corr_normed_av[timeslice_diff] /= threads_per_beta;
+        timeslice_observable_corr_normed_av[timeslice_diff] /= threads_per_beta;
     }
 
 
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_d[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_d[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_d[timeslice_diff] +=
-                (timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] - timeslice_energy_corr_normed_av[timeslice_diff])
-                *(timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] - timeslice_energy_corr_normed_av[timeslice_diff]);
+            timeslice_observable_corr_normed_d[timeslice_diff] +=
+                (timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] - timeslice_observable_corr_normed_av[timeslice_diff])
+                *(timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] - timeslice_observable_corr_normed_av[timeslice_diff]);
         }
-        timeslice_energy_corr_normed_d[timeslice_diff] /= threads_per_beta/(threads_per_beta - 1);
-        timeslice_energy_corr_normed_d[timeslice_diff] = sqrt(timeslice_energy_corr_normed_d[timeslice_diff]);
+        timeslice_observable_corr_normed_d[timeslice_diff] /= threads_per_beta / (threads_per_beta - 1);
+        timeslice_observable_corr_normed_d[timeslice_diff] = sqrt(timeslice_observable_corr_normed_d[timeslice_diff]);
     }
 
 
@@ -1209,63 +1208,63 @@ void MeasureScalarGlueballForBeta_v1_processing (unsigned int key, int iBeta,
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int t = 0; t < int(T_measurement/tau); t++) {
             for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] = 0.0;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] = 0.0;
                 for (int timeslice_base = 0; timeslice_base < N4; timeslice_base++) {
-                    timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] +=
-                        (timeslice_energy[thread_id][timeslice_base][t] - timeslice_energy_av)
-                        *(timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t] - timeslice_energy_av);
+                    timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] +=
+                        (timeslice_observable[thread_id][timeslice_base][t] - timeslice_observable_av)
+                        *(timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t] - timeslice_observable_av);
                 }
 
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] /= N4;
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] /= timeslice_energy_av*timeslice_energy_av;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] /= N4;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] /= timeslice_observable_av * timeslice_observable_av;
             }
         }
     }
 
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_av_old[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_av_old[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_corr_normed_av_old[timeslice_diff] +=
-                    timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t];
+                timeslice_observable_corr_normed_av_old[timeslice_diff] +=
+                    timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t];
             }
         }
-        timeslice_energy_corr_normed_av_old[timeslice_diff] /= threads_per_beta*T_measurement/tau;
+        timeslice_observable_corr_normed_av_old[timeslice_diff] /= threads_per_beta * T_measurement / tau;
     }
 
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_d_old[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_d_old[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_corr_normed_d_old[timeslice_diff] +=
-                    (timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_energy_corr_normed_av[timeslice_diff])
-                    *(timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_energy_corr_normed_av[timeslice_diff]);
+                timeslice_observable_corr_normed_d_old[timeslice_diff] +=
+                    (timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_observable_corr_normed_av[timeslice_diff])
+                    *(timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_observable_corr_normed_av[timeslice_diff]);
             }
         }
-        timeslice_energy_corr_normed_d_old[timeslice_diff] /= (threads_per_beta*T_measurement/tau)*(threads_per_beta*T_measurement/tau - 1);
-        timeslice_energy_corr_normed_d_old[timeslice_diff] = sqrt(timeslice_energy_corr_normed_d_old[timeslice_diff]);
+        timeslice_observable_corr_normed_d_old[timeslice_diff] /= (threads_per_beta * T_measurement / tau) * (threads_per_beta * T_measurement / tau - 1);
+        timeslice_observable_corr_normed_d_old[timeslice_diff] = sqrt(timeslice_observable_corr_normed_d_old[timeslice_diff]);
     }
 
 
 
     out << beta << ',' << s_av << ',' << s_d << ',' << tau_corr_av*tau << '\n';
-    out << beta << ',' << timeslice_energy_av << ',' << timeslice_energy_d
-                    << ',' << timeslice_energy_d/timeslice_energy_av  << '\n';
+    out << beta << ',' << timeslice_observable_av << ',' << timeslice_observable_d
+        << ',' << timeslice_observable_d / timeslice_observable_av << '\n';
     out.close();
     out.open(output_file_name, ios::out | ios::app);
 
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
             out << beta << ',' << tau_corr_av << ',' << timeslice_diff << ','
-                << timeslice_energy_corr_normed_av[timeslice_diff] << ','
-                << timeslice_energy_corr_normed_d[timeslice_diff] << '\n';
+                << timeslice_observable_corr_normed_av[timeslice_diff] << ','
+                << timeslice_observable_corr_normed_d[timeslice_diff] << '\n';
     }
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
             out << beta << ',' << tau_corr_av << ',' << timeslice_diff << ','
-                << timeslice_energy_corr_normed_av_old[timeslice_diff] << ','
-                << timeslice_energy_corr_normed_d_old[timeslice_diff] << '\n';
+                << timeslice_observable_corr_normed_av_old[timeslice_diff] << ','
+                << timeslice_observable_corr_normed_d_old[timeslice_diff] << '\n';
     }
     out.close();
     out.open(output_file_name, ios::out | ios::app);
@@ -1292,11 +1291,11 @@ void MeasureScalarGlueballForBeta_v1_0(unsigned int key, int iBeta) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_energy = new double**[threads_per_beta];
+    double ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy[thread_id] = new double*[N4];
+        timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[thread_id][timeslice] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable[thread_id][timeslice] = new double[int(T_measurement / tau) + 1];
         }
     }
 
@@ -1308,7 +1307,7 @@ void MeasureScalarGlueballForBeta_v1_0(unsigned int key, int iBeta) {
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         thread_array[thread_id] =
             thread(MeasureScalarGlueballForBeta_ReadingThreadFunction_v1, key,
-                iBeta, thread_id, s[thread_id], timeslice_energy[thread_id]);
+                   iBeta, thread_id, s[thread_id], timeslice_observable[thread_id]);
     }
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1332,80 +1331,80 @@ void MeasureScalarGlueballForBeta_v1_0(unsigned int key, int iBeta) {
 
 
 
-    double timeslice_energy_av = 0.0;
+    double timeslice_observable_av = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_av += timeslice_energy[thread_id][timeslice][t];
+                timeslice_observable_av += timeslice_observable[thread_id][timeslice][t];
             }
         }
     }
-    timeslice_energy_av /= threads_per_beta*N4*T_measurement/tau;
+    timeslice_observable_av /= threads_per_beta * N4 * T_measurement / tau;
 
-    double timeslice_energy_d = 0.0;
+    double timeslice_observable_d = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_d += (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av)*
-                                        (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av);
+                timeslice_observable_d += (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av) *
+                                          (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av);
             }
         }
     }
-    timeslice_energy_d /= (threads_per_beta*N4*T_measurement/tau)*(threads_per_beta*N4*T_measurement/tau);
-    timeslice_energy_d = sqrt(timeslice_energy_d);
+    timeslice_observable_d /= (threads_per_beta * N4 * T_measurement / tau) * (threads_per_beta * N4 * T_measurement / tau);
+    timeslice_observable_d = sqrt(timeslice_observable_d);
 
 
 
 
-    double ***timeslice_energy_corr_product = new double**[threads_per_beta];
+    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_product[thread_id] = new double*[N4];
+        timeslice_observable_corr_product[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_energy_corr_product_jack = new double*[N4];
+    double **timeslice_observable_corr_product_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_jack = new double[threads_per_beta];
-    double **timeslice_energy_corr_normed_jack = new double*[N4];
+    double *timeslice_observable_jack = new double[threads_per_beta];
+    double **timeslice_observable_corr_normed_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_corr_normed_av = new double[N4];
-    double *timeslice_energy_corr_normed_d = new double[N4];
-    double ***timeslice_energy_corr_normed_old = new double**[threads_per_beta];
+    double *timeslice_observable_corr_normed_av = new double[N4];
+    double *timeslice_observable_corr_normed_d = new double[N4];
+    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_normed_old[thread_id] = new double*[N4];
+        timeslice_observable_corr_normed_old[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            timeslice_energy_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_energy_corr_normed_av_old = new double[N4];
-    double *timeslice_energy_corr_normed_d_old = new double[N4];
+    double *timeslice_observable_corr_normed_av_old = new double[N4];
+    double *timeslice_observable_corr_normed_d_old = new double[N4];
 
 
     MeasureScalarGlueballForBeta_v1_processing (key, iBeta,
-                s_av, s_d, tau_corr_av,
-                timeslice_energy,
-                timeslice_energy_av, timeslice_energy_d,
-                timeslice_energy_corr_product,
-                timeslice_energy_corr_product_jack,
-                timeslice_energy_jack,
-                timeslice_energy_corr_normed_jack,
-                timeslice_energy_corr_normed_av,
-                timeslice_energy_corr_normed_d,
-                timeslice_energy_corr_normed_old,
-                timeslice_energy_corr_normed_av_old,
-                timeslice_energy_corr_normed_d_old);
+                                                s_av, s_d, tau_corr_av,
+                                                timeslice_observable,
+                                                timeslice_observable_av, timeslice_observable_d,
+                                                timeslice_observable_corr_product,
+                                                timeslice_observable_corr_product_jack,
+                                                timeslice_observable_jack,
+                                                timeslice_observable_corr_normed_jack,
+                                                timeslice_observable_corr_normed_av,
+                                                timeslice_observable_corr_normed_d,
+                                                timeslice_observable_corr_normed_old,
+                                                timeslice_observable_corr_normed_av_old,
+                                                timeslice_observable_corr_normed_d_old);
 
 
-    delete [] timeslice_energy_jack;
-    delete [] timeslice_energy_corr_normed_av;
-    delete [] timeslice_energy_corr_normed_d;
-    delete [] timeslice_energy_corr_normed_av_old;
-    delete [] timeslice_energy_corr_normed_d_old;
+    delete [] timeslice_observable_jack;
+    delete [] timeslice_observable_corr_normed_av;
+    delete [] timeslice_observable_corr_normed_d;
+    delete [] timeslice_observable_corr_normed_av_old;
+    delete [] timeslice_observable_corr_normed_d_old;
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1415,45 +1414,45 @@ void MeasureScalarGlueballForBeta_v1_0(unsigned int key, int iBeta) {
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            delete [] timeslice_energy_corr_product[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_product[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_product[thread_id];
+        delete [] timeslice_observable_corr_product[thread_id];
     }
-    delete [] timeslice_energy_corr_product;
+    delete [] timeslice_observable_corr_product;
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        delete [] timeslice_energy_corr_product_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_product_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_product_jack;
+    delete [] timeslice_observable_corr_product_jack;
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        delete [] timeslice_energy_corr_normed_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_normed_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_normed_jack;
+    delete [] timeslice_observable_corr_normed_jack;
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            delete [] timeslice_energy_corr_normed_old[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_normed_old[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_normed_old[thread_id];
+        delete [] timeslice_observable_corr_normed_old[thread_id];
     }
-    delete [] timeslice_energy_corr_normed_old;
+    delete [] timeslice_observable_corr_normed_old;
 
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            delete [] timeslice_energy[thread_id][timeslice];
+            delete [] timeslice_observable[thread_id][timeslice];
         }
-        delete [] timeslice_energy[thread_id];
+        delete [] timeslice_observable[thread_id];
     }
-    delete [] timeslice_energy;
+    delete [] timeslice_observable;
 }
 
 
 
 
-
+//    odd layers updates then even layers updates
 void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta) {
 //    float beta = 0.01*iBeta;
 
@@ -1470,11 +1469,11 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_energy = new double**[threads_per_beta];
+    double ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy[thread_id] = new double*[N4];
+        timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[thread_id][timeslice] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable[thread_id][timeslice] = new double[int(T_measurement / tau) + 1];
         }
     }
 
@@ -1484,8 +1483,7 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
         for (int t = 0; t < int(T_measurement/tau); t++) {
             char file_name_out_measured[500];
 
-            sprintf(file_name_out_measured,
-            system_single_measurement_file_format,
+            sprintf(file_name_out_measured, system_single_measurement_file_format,
                     iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
             ifstream out_mes;
@@ -1493,7 +1491,7 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
             out_mes.open(file_name_out_measured, ios::in | ios::binary);
 
             for (int timeslice = 0; timeslice < N4; timeslice++) {
-                out_mes.read((char *) &timeslice_energy[thread_id][timeslice][t],
+                out_mes.read((char *) &timeslice_observable[thread_id][timeslice][t],
                                 sizeof(double));
             }
             out_mes.read((char *) &s[thread_id][t], sizeof(double));
@@ -1517,78 +1515,78 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
 //        }
 //    }
 
-    double timeslice_energy_av = 0.0;
+    double timeslice_observable_av = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_av += timeslice_energy[thread_id][timeslice][t];
+                timeslice_observable_av += timeslice_observable[thread_id][timeslice][t];
             }
         }
     }
-    timeslice_energy_av /= threads_per_beta*N4*T_measurement/tau;
+    timeslice_observable_av /= threads_per_beta * N4 * T_measurement / tau;
 
-    double timeslice_energy_d = 0.0;
+    double timeslice_observable_d = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_d += (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av)*
-                                        (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av);
+                timeslice_observable_d += (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av) *
+                                          (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av);
             }
         }
     }
-    timeslice_energy_d /= (threads_per_beta*N4*T_measurement/tau)*(threads_per_beta*N4*T_measurement/tau);
-    timeslice_energy_d = sqrt(timeslice_energy_d);
+    timeslice_observable_d /= (threads_per_beta * N4 * T_measurement / tau) * (threads_per_beta * N4 * T_measurement / tau);
+    timeslice_observable_d = sqrt(timeslice_observable_d);
 
 
-    double ***timeslice_energy_corr_product = new double**[threads_per_beta];
+    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_product[thread_id] = new double*[N4];
+        timeslice_observable_corr_product[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_energy_corr_product_jack = new double*[N4];
+    double **timeslice_observable_corr_product_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_jack = new double[threads_per_beta];
-    double **timeslice_energy_corr_normed_jack = new double*[N4];
+    double *timeslice_observable_jack = new double[threads_per_beta];
+    double **timeslice_observable_corr_normed_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        timeslice_energy_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_corr_normed_av = new double[N4];
-    double *timeslice_energy_corr_normed_d = new double[N4];
-    double ***timeslice_energy_corr_normed_old = new double**[threads_per_beta];
+    double *timeslice_observable_corr_normed_av = new double[N4];
+    double *timeslice_observable_corr_normed_d = new double[N4];
+    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_normed_old[thread_id] = new double*[N4];
+        timeslice_observable_corr_normed_old[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            timeslice_energy_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_energy_corr_normed_av_old = new double[N4];
-    double *timeslice_energy_corr_normed_d_old = new double[N4];
+    double *timeslice_observable_corr_normed_av_old = new double[N4];
+    double *timeslice_observable_corr_normed_d_old = new double[N4];
 
 
     MeasureScalarGlueballForBeta_v1_processing (key, iBeta,
-                s_av, s_d, tau_corr_av,
-                timeslice_energy,
-                timeslice_energy_av, timeslice_energy_d,
-                timeslice_energy_corr_product,
-                timeslice_energy_corr_product_jack,
-                timeslice_energy_jack,
-                timeslice_energy_corr_normed_jack,
-                timeslice_energy_corr_normed_av,
-                timeslice_energy_corr_normed_d,
-                timeslice_energy_corr_normed_old,
-                timeslice_energy_corr_normed_av_old,
-                timeslice_energy_corr_normed_d_old);
+                                                s_av, s_d, tau_corr_av,
+                                                timeslice_observable,
+                                                timeslice_observable_av, timeslice_observable_d,
+                                                timeslice_observable_corr_product,
+                                                timeslice_observable_corr_product_jack,
+                                                timeslice_observable_jack,
+                                                timeslice_observable_corr_normed_jack,
+                                                timeslice_observable_corr_normed_av,
+                                                timeslice_observable_corr_normed_d,
+                                                timeslice_observable_corr_normed_old,
+                                                timeslice_observable_corr_normed_av_old,
+                                                timeslice_observable_corr_normed_d_old);
 
 
-    delete [] timeslice_energy_jack;
-    delete [] timeslice_energy_corr_normed_av;
-    delete [] timeslice_energy_corr_normed_d;
-    delete [] timeslice_energy_corr_normed_av_old;
-    delete [] timeslice_energy_corr_normed_d_old;
+    delete [] timeslice_observable_jack;
+    delete [] timeslice_observable_corr_normed_av;
+    delete [] timeslice_observable_corr_normed_d;
+    delete [] timeslice_observable_corr_normed_av_old;
+    delete [] timeslice_observable_corr_normed_d_old;
 
 
 
@@ -1608,39 +1606,39 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            delete [] timeslice_energy_corr_product[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_product[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_product[thread_id];
+        delete [] timeslice_observable_corr_product[thread_id];
     }
-    delete [] timeslice_energy_corr_product;
+    delete [] timeslice_observable_corr_product;
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        delete [] timeslice_energy_corr_product_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_product_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_product_jack;
+    delete [] timeslice_observable_corr_product_jack;
 
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-        delete [] timeslice_energy_corr_normed_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_normed_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_normed_jack;
+    delete [] timeslice_observable_corr_normed_jack;
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
-            delete [] timeslice_energy_corr_normed_old[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_normed_old[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_normed_old[thread_id];
+        delete [] timeslice_observable_corr_normed_old[thread_id];
     }
-    delete [] timeslice_energy_corr_normed_old;
+    delete [] timeslice_observable_corr_normed_old;
 
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            delete [] timeslice_energy[thread_id][timeslice];
+            delete [] timeslice_observable[thread_id][timeslice];
         }
-        delete [] timeslice_energy[thread_id];
+        delete [] timeslice_observable[thread_id];
     }
-    delete [] timeslice_energy;
+    delete [] timeslice_observable;
 }
 
 
@@ -1649,7 +1647,7 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
 
 //  half-spaces updates
 void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
-            int iBeta, int thread_id, double *s, double **timeslice_energy) {
+            int iBeta, int thread_id, double *s, double **timeslice_observable) {
     float beta = 0.01*iBeta;
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
@@ -1663,13 +1661,10 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in,
-        system_configuration_file_format,
+        sprintf(file_name_in, system_configuration_file_format,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
-        ifstream in_sys;
-
-        in_sys.open(file_name_in, ios::in | ios::binary);
+        ifstream in_sys(file_name_in, ios::in | ios::binary);
         in_sys >> System;
         in_sys.close();
 
@@ -1678,23 +1673,17 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
 
         char file_name_out_measured[500];
 
-        sprintf(file_name_out_measured,
-        system_single_measurement_file_format,
+        sprintf(file_name_out_measured, system_single_measurement_file_format,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
-        ofstream out_mes;
-
-        out_mes.open(file_name_out_measured, ios::out | ios::binary);
-
-
-
+        ofstream out_mes(file_name_out_measured, ios::out | ios::binary);
 
 
 
         s[t] = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
 
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[timeslice][t] = 0.0;
+            timeslice_observable[timeslice][t] = 0.0;
         }
 
         for (int step = 0; step < level_II_number_of_measurements; step++) {
@@ -1702,7 +1691,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
                 for (int i = 0; i < N1; i++) {
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
-                            timeslice_energy[timeslice][t] +=
+                            timeslice_observable[timeslice][t] +=
     //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
                                             + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
@@ -1720,8 +1709,8 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
 
 
         for (int timeslice = 0; timeslice < N4; timeslice ++) {
-            timeslice_energy[timeslice][t] /= level_II_number_of_measurements;
-            out_mes.write((const char *) &timeslice_energy[timeslice][t],
+            timeslice_observable[timeslice][t] /= level_II_number_of_measurements;
+            out_mes.write((const char *) &timeslice_observable[timeslice][t],
                             sizeof(double));
         }
         out_mes.write((const char *) &s[t], sizeof(double));
@@ -1746,18 +1735,18 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
 
 
 void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
-                double s_av, double s_d, double tau_corr_av,
-                double ***timeslice_energy,
-                double timeslice_energy_av, double timeslice_energy_d,
-                double ***timeslice_energy_corr_product,
-                double **timeslice_energy_corr_product_jack,
-                double *timeslice_energy_jack,
-                double **timeslice_energy_corr_normed_jack,
-                double *timeslice_energy_corr_normed_av,
-                double *timeslice_energy_corr_normed_d,
-                double ***timeslice_energy_corr_normed_old,
-                double *timeslice_energy_corr_normed_av_old,
-                double *timeslice_energy_corr_normed_d_old
+                                                double s_av, double s_d, double tau_corr_av,
+                                                double ***timeslice_observable,
+                                                double timeslice_observable_av, double timeslice_observable_d,
+                                                double ***timeslice_observable_corr_product,
+                                                double **timeslice_observable_corr_product_jack,
+                                                double *timeslice_observable_jack,
+                                                double **timeslice_observable_corr_normed_jack,
+                                                double *timeslice_observable_corr_normed_av,
+                                                double *timeslice_observable_corr_normed_d,
+                                                double ***timeslice_observable_corr_normed_old,
+                                                double *timeslice_observable_corr_normed_av_old,
+                                                double *timeslice_observable_corr_normed_d_old
                                                                     ) {
     float beta = 0.01*iBeta;
 
@@ -1774,7 +1763,7 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int t = 0; t < int(T_measurement/tau); t++) {
             for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-                timeslice_energy_corr_product[thread_id][timeslice_diff][t] = 0.0;
+                timeslice_observable_corr_product[thread_id][timeslice_diff][t] = 0.0;
             }
         }
     }
@@ -1782,17 +1771,17 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
         for (int t = 0; t < int(T_measurement/tau); t++) {
             for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
                 for (int timeslice_base = N4/2 + 1 - timeslice_diff; timeslice_base < N4/2; timeslice_base++) {
-                    timeslice_energy_corr_product[thread_id][timeslice_diff][t] +=
-                        timeslice_energy[thread_id][timeslice_base][t]
-                        *timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t];
+                    timeslice_observable_corr_product[thread_id][timeslice_diff][t] +=
+                            timeslice_observable[thread_id][timeslice_base][t]
+                            * timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t];
                 }
                 for (int timeslice_base = N4 + 1 - timeslice_diff; timeslice_base < N4; timeslice_base++) {
-                    timeslice_energy_corr_product[thread_id][timeslice_diff][t] +=
-                        timeslice_energy[thread_id][timeslice_base][t]
-                        *timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t];
+                    timeslice_observable_corr_product[thread_id][timeslice_diff][t] +=
+                            timeslice_observable[thread_id][timeslice_base][t]
+                            * timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t];
                 }
 
-                timeslice_energy_corr_product[thread_id][timeslice_diff][t] /= (timeslice_diff - 1)*2;
+                timeslice_observable_corr_product[thread_id][timeslice_diff][t] /= (timeslice_diff - 1) * 2;
             }
         }
     }
@@ -1803,24 +1792,24 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
         for (int thread_id_base = 0; thread_id_base < threads_per_beta; thread_id_base++) {
-            timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base] = 0.0;
+            timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base] = 0.0;
             for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
                 if (thread_id_base == thread_id) {
                     continue;
                 }
 
                 for (int t = 0; t < int(T_measurement/tau); t++) {
-                    timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base] +=
-                                    timeslice_energy_corr_product[thread_id][timeslice_diff][t];
+                    timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base] +=
+                                    timeslice_observable_corr_product[thread_id][timeslice_diff][t];
                 }
             }
-            timeslice_energy_corr_product_jack[timeslice_diff][thread_id_base] /= (threads_per_beta - 1)*T_measurement/tau;
+            timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base] /= (threads_per_beta - 1) * T_measurement / tau;
         }
     }
 
 
     for (int thread_id_base = 0; thread_id_base < threads_per_beta; thread_id_base++) {
-        timeslice_energy_jack[thread_id_base] = 0.0;
+        timeslice_observable_jack[thread_id_base] = 0.0;
 
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             if (thread_id_base == thread_id) {
@@ -1829,46 +1818,46 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
 
             for (int timeslice = 0; timeslice < N4; timeslice++) {
                 for (int t = 0; t < int(T_measurement/tau); t++) {
-                    timeslice_energy_jack[thread_id_base] += timeslice_energy[thread_id][timeslice][t];
+                    timeslice_observable_jack[thread_id_base] += timeslice_observable[thread_id][timeslice][t];
                 }
             }
         }
 
-        timeslice_energy_jack[thread_id_base] /= (threads_per_beta - 1)*N4*T_measurement/tau;
+        timeslice_observable_jack[thread_id_base] /= (threads_per_beta - 1) * N4 * T_measurement / tau;
     }
 
 
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] =
-                timeslice_energy_corr_product_jack[timeslice_diff][thread_id]
-                /timeslice_energy_jack[thread_id]/timeslice_energy_jack[thread_id] - 1.0;
+            timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] =
+                    timeslice_observable_corr_product_jack[timeslice_diff][thread_id]
+                    / timeslice_observable_jack[thread_id] / timeslice_observable_jack[thread_id] - 1.0;
         }
     }
 
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
-        timeslice_energy_corr_normed_av[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_av[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_av[timeslice_diff] +=
-                timeslice_energy_corr_normed_jack[timeslice_diff][thread_id];
+            timeslice_observable_corr_normed_av[timeslice_diff] +=
+                timeslice_observable_corr_normed_jack[timeslice_diff][thread_id];
         }
-        timeslice_energy_corr_normed_av[timeslice_diff] /= threads_per_beta;
+        timeslice_observable_corr_normed_av[timeslice_diff] /= threads_per_beta;
     }
 
 
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
-        timeslice_energy_corr_normed_d[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_d[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-            timeslice_energy_corr_normed_d[timeslice_diff] +=
-                (timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] - timeslice_energy_corr_normed_av[timeslice_diff])
-                *(timeslice_energy_corr_normed_jack[timeslice_diff][thread_id] - timeslice_energy_corr_normed_av[timeslice_diff]);
+            timeslice_observable_corr_normed_d[timeslice_diff] +=
+                (timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] - timeslice_observable_corr_normed_av[timeslice_diff])
+                *(timeslice_observable_corr_normed_jack[timeslice_diff][thread_id] - timeslice_observable_corr_normed_av[timeslice_diff]);
         }
 
-        timeslice_energy_corr_normed_d[timeslice_diff] /= threads_per_beta/(threads_per_beta - 1);
-        timeslice_energy_corr_normed_d[timeslice_diff] = sqrt(timeslice_energy_corr_normed_d[timeslice_diff]);
+        timeslice_observable_corr_normed_d[timeslice_diff] /= threads_per_beta / (threads_per_beta - 1);
+        timeslice_observable_corr_normed_d[timeslice_diff] = sqrt(timeslice_observable_corr_normed_d[timeslice_diff]);
     }
 
 
@@ -1882,75 +1871,72 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int t = 0; t < int(T_measurement/tau); t++) {
             for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] = 0.0;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] = 0.0;
                 for (int timeslice_base = N4/2 + 1 - timeslice_diff; timeslice_base < N4/2; timeslice_base++) {
-                    timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] +=
-                        (timeslice_energy[thread_id][timeslice_base][t] - timeslice_energy_av)
-                        *(timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t] - timeslice_energy_av);
+                    timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] +=
+                        (timeslice_observable[thread_id][timeslice_base][t] - timeslice_observable_av)
+                        *(timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t] - timeslice_observable_av);
                 }
                 for (int timeslice_base = N4 + 1 - timeslice_diff; timeslice_base < N4; timeslice_base++) {
-                    timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] +=
-                        (timeslice_energy[thread_id][timeslice_base][t] - timeslice_energy_av)
-                        *(timeslice_energy[thread_id][(timeslice_base + timeslice_diff)%N4][t] - timeslice_energy_av);
+                    timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] +=
+                        (timeslice_observable[thread_id][timeslice_base][t] - timeslice_observable_av)
+                        *(timeslice_observable[thread_id][(timeslice_base + timeslice_diff) % N4][t] - timeslice_observable_av);
                 }
 
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] /= (timeslice_diff - 1)*2;
-                timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] /= timeslice_energy_av*timeslice_energy_av;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] /= (timeslice_diff - 1) * 2;
+                timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] /= timeslice_observable_av * timeslice_observable_av;
             }
         }
     }
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
-        timeslice_energy_corr_normed_av_old[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_av_old[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_corr_normed_av_old[timeslice_diff] +=
-                    timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t];
+                timeslice_observable_corr_normed_av_old[timeslice_diff] +=
+                    timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t];
             }
         }
-        timeslice_energy_corr_normed_av_old[timeslice_diff] /= threads_per_beta*T_measurement/tau;
+        timeslice_observable_corr_normed_av_old[timeslice_diff] /= threads_per_beta * T_measurement / tau;
     }
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
-        timeslice_energy_corr_normed_d_old[timeslice_diff] = 0.0;
+        timeslice_observable_corr_normed_d_old[timeslice_diff] = 0.0;
         for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_corr_normed_d_old[timeslice_diff] +=
-                    (timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_energy_corr_normed_av_old[timeslice_diff])
-                    *(timeslice_energy_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_energy_corr_normed_av_old[timeslice_diff]);
+                timeslice_observable_corr_normed_d_old[timeslice_diff] +=
+                    (timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_observable_corr_normed_av_old[timeslice_diff])
+                    *(timeslice_observable_corr_normed_old[thread_id][timeslice_diff][t] - timeslice_observable_corr_normed_av_old[timeslice_diff]);
             }
         }
-        timeslice_energy_corr_normed_d_old[timeslice_diff] /= (threads_per_beta*T_measurement/tau)*(threads_per_beta*T_measurement/tau - 1);
-        timeslice_energy_corr_normed_d_old[timeslice_diff] = sqrt(timeslice_energy_corr_normed_d_old[timeslice_diff]);
+        timeslice_observable_corr_normed_d_old[timeslice_diff] /= (threads_per_beta * T_measurement / tau) * (threads_per_beta * T_measurement / tau - 1);
+        timeslice_observable_corr_normed_d_old[timeslice_diff] = sqrt(timeslice_observable_corr_normed_d_old[timeslice_diff]);
     }
 
 
 
     out << beta << ',' << s_av << ',' << s_d << ',' << tau_corr_av*tau << '\n';
-    out << beta << ',' << timeslice_energy_av << ',' << timeslice_energy_d
-                    << ',' << timeslice_energy_d/timeslice_energy_av  << '\n';
+    out << beta << ',' << timeslice_observable_av << ',' << timeslice_observable_d
+        << ',' << timeslice_observable_d / timeslice_observable_av << '\n';
     out.close();
     out.open(output_file_name, ios::out | ios::app);
 
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
             out << beta << ',' << tau_corr_av << ',' << timeslice_diff << ','
-                << timeslice_energy_corr_normed_av_old[timeslice_diff] << ','
-                << timeslice_energy_corr_normed_d_old[timeslice_diff] << '\n';
+                << timeslice_observable_corr_normed_av_old[timeslice_diff] << ','
+                << timeslice_observable_corr_normed_d_old[timeslice_diff] << '\n';
     }
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
             out << beta << ',' << tau_corr_av << ',' << timeslice_diff << ','
-                << timeslice_energy_corr_normed_av[timeslice_diff] << ','
-                << timeslice_energy_corr_normed_d[timeslice_diff] << '\n';
+                << timeslice_observable_corr_normed_av[timeslice_diff] << ','
+                << timeslice_observable_corr_normed_d[timeslice_diff] << '\n';
     }
     out.close();
     out.open(output_file_name, ios::out | ios::app);
 
 
     out.close();
-
-
-
 }
 
 
@@ -1970,11 +1956,11 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_energy = new double**[threads_per_beta];
+    double ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy[thread_id] = new double*[N4];
+        timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[thread_id][timeslice] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable[thread_id][timeslice] = new double[int(T_measurement / tau) + 1];
         }
     }
 
@@ -1986,7 +1972,7 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         thread_array[thread_id] =
             thread(MeasureScalarGlueballForBeta_ReadingThreadFunction_v2, key,
-                iBeta, thread_id, s[thread_id], timeslice_energy[thread_id]);
+                   iBeta, thread_id, s[thread_id], timeslice_observable[thread_id]);
     }
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -2010,80 +1996,80 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
 
 
 
-    double timeslice_energy_av = 0.0;
+    double timeslice_observable_av = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_av += timeslice_energy[thread_id][timeslice][t];
+                timeslice_observable_av += timeslice_observable[thread_id][timeslice][t];
             }
         }
     }
-    timeslice_energy_av /= threads_per_beta*N4*T_measurement/tau;
+    timeslice_observable_av /= threads_per_beta * N4 * T_measurement / tau;
 
-    double timeslice_energy_d = 0.0;
+    double timeslice_observable_d = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_d += (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av)*
-                                        (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av);
+                timeslice_observable_d += (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av) *
+                                          (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av);
             }
         }
     }
-    timeslice_energy_d /= (threads_per_beta*N4*T_measurement/tau)*(threads_per_beta*N4*T_measurement/tau);
-    timeslice_energy_d = sqrt(timeslice_energy_d);
+    timeslice_observable_d /= (threads_per_beta * N4 * T_measurement / tau) * (threads_per_beta * N4 * T_measurement / tau);
+    timeslice_observable_d = sqrt(timeslice_observable_d);
 
 
 
 
-    double ***timeslice_energy_corr_product = new double**[threads_per_beta];
+    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_product[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_product[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_energy_corr_product_jack = new double*[N4/2 + 1];
+    double **timeslice_observable_corr_product_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        timeslice_energy_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_jack = new double[threads_per_beta];
-    double **timeslice_energy_corr_normed_jack = new double*[N4/2 + 1];
+    double *timeslice_observable_jack = new double[threads_per_beta];
+    double **timeslice_observable_corr_normed_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        timeslice_energy_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_corr_normed_av = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d = new double[N4/2 + 1];
-    double ***timeslice_energy_corr_normed_old = new double**[threads_per_beta];
+    double *timeslice_observable_corr_normed_av = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d = new double[N4 / 2 + 1];
+    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_normed_old[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_normed_old[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_energy_corr_normed_av_old = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d_old = new double[N4/2 + 1];
+    double *timeslice_observable_corr_normed_av_old = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d_old = new double[N4 / 2 + 1];
 
 
     MeasureScalarGlueballForBeta_v2_processing (key, iBeta,
-                s_av, s_d, tau_corr_av,
-                timeslice_energy,
-                timeslice_energy_av, timeslice_energy_d,
-                timeslice_energy_corr_product,
-                timeslice_energy_corr_product_jack,
-                timeslice_energy_jack,
-                timeslice_energy_corr_normed_jack,
-                timeslice_energy_corr_normed_av,
-                timeslice_energy_corr_normed_d,
-                timeslice_energy_corr_normed_old,
-                timeslice_energy_corr_normed_av_old,
-                timeslice_energy_corr_normed_d_old);
+                                                s_av, s_d, tau_corr_av,
+                                                timeslice_observable,
+                                                timeslice_observable_av, timeslice_observable_d,
+                                                timeslice_observable_corr_product,
+                                                timeslice_observable_corr_product_jack,
+                                                timeslice_observable_jack,
+                                                timeslice_observable_corr_normed_jack,
+                                                timeslice_observable_corr_normed_av,
+                                                timeslice_observable_corr_normed_d,
+                                                timeslice_observable_corr_normed_old,
+                                                timeslice_observable_corr_normed_av_old,
+                                                timeslice_observable_corr_normed_d_old);
 
 
-    delete [] timeslice_energy_jack;
-    delete [] timeslice_energy_corr_normed_av;
-    delete [] timeslice_energy_corr_normed_d;
-    delete [] timeslice_energy_corr_normed_av_old;
-    delete [] timeslice_energy_corr_normed_d_old;
+    delete [] timeslice_observable_jack;
+    delete [] timeslice_observable_corr_normed_av;
+    delete [] timeslice_observable_corr_normed_d;
+    delete [] timeslice_observable_corr_normed_av_old;
+    delete [] timeslice_observable_corr_normed_d_old;
 
 
 
@@ -2096,43 +2082,43 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_product[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_product[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_product[thread_id];
+        delete [] timeslice_observable_corr_product[thread_id];
     }
-    delete [] timeslice_energy_corr_product;
+    delete [] timeslice_observable_corr_product;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        delete [] timeslice_energy_corr_product_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_product_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_product_jack;
+    delete [] timeslice_observable_corr_product_jack;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        delete [] timeslice_energy_corr_normed_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_normed_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_normed_jack;
+    delete [] timeslice_observable_corr_normed_jack;
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_normed_old[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_normed_old[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_normed_old[thread_id];
+        delete [] timeslice_observable_corr_normed_old[thread_id];
     }
-    delete [] timeslice_energy_corr_normed_old;
+    delete [] timeslice_observable_corr_normed_old;
 
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4/2 + 1; timeslice++) {
-            delete [] timeslice_energy[thread_id][timeslice];
+            delete [] timeslice_observable[thread_id][timeslice];
         }
-        delete [] timeslice_energy[thread_id];
+        delete [] timeslice_observable[thread_id];
     }
-    delete [] timeslice_energy;
+    delete [] timeslice_observable;
 }
 
 
-// Precalculated average loop, v2 version
+// Precalculated average loop, half-spaces updates
 void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
 //    float beta = 0.01*iBeta;
 
@@ -2148,11 +2134,11 @@ void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_energy = new double**[threads_per_beta];
+    double ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy[thread_id] = new double*[N4];
+        timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[thread_id][timeslice] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable[thread_id][timeslice] = new double[int(T_measurement / tau) + 1];
         }
     }
 
@@ -2164,7 +2150,7 @@ void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         thread_array[thread_id] =
             thread(MeasureScalarGlueballForBeta_ReadingThreadFunction_v2, key,
-                iBeta, thread_id, s[thread_id], timeslice_energy[thread_id]);
+                   iBeta, thread_id, s[thread_id], timeslice_observable[thread_id]);
     }
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -2188,62 +2174,62 @@ void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
 
 
 
-    const double timeslice_energy_av = 1.7345867*3*N1*N2*N3;
-    const double timeslice_energy_d = 0.01;
+    const double timeslice_observable_av = 1.7345867 * 3 * N1 * N2 * N3;
+    const double timeslice_observable_d = 0.01;
 
 
 
 
 
-    double ***timeslice_energy_corr_product = new double**[threads_per_beta];
+    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_product[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_product[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_energy_corr_product_jack = new double*[N4/2 + 1];
+    double **timeslice_observable_corr_product_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        timeslice_energy_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_jack = new double[threads_per_beta];
-    double **timeslice_energy_corr_normed_jack = new double*[N4/2 + 1];
+    double *timeslice_observable_jack = new double[threads_per_beta];
+    double **timeslice_observable_corr_normed_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        timeslice_energy_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_corr_normed_av = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d = new double[N4/2 + 1];
-    double ***timeslice_energy_corr_normed_old = new double**[threads_per_beta];
+    double *timeslice_observable_corr_normed_av = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d = new double[N4 / 2 + 1];
+    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_normed_old[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_normed_old[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_energy_corr_normed_av_old = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d_old = new double[N4/2 + 1];
+    double *timeslice_observable_corr_normed_av_old = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d_old = new double[N4 / 2 + 1];
 
 
     MeasureScalarGlueballForBeta_v2_processing (key, iBeta,
-                s_av, s_d, tau_corr_av,
-                timeslice_energy,
-                timeslice_energy_av, timeslice_energy_d,
-                timeslice_energy_corr_product,
-                timeslice_energy_corr_product_jack,
-                timeslice_energy_jack,
-                timeslice_energy_corr_normed_jack,
-                timeslice_energy_corr_normed_av,
-                timeslice_energy_corr_normed_d,
-                timeslice_energy_corr_normed_old,
-                timeslice_energy_corr_normed_av_old,
-                timeslice_energy_corr_normed_d_old);
+                                                s_av, s_d, tau_corr_av,
+                                                timeslice_observable,
+                                                timeslice_observable_av, timeslice_observable_d,
+                                                timeslice_observable_corr_product,
+                                                timeslice_observable_corr_product_jack,
+                                                timeslice_observable_jack,
+                                                timeslice_observable_corr_normed_jack,
+                                                timeslice_observable_corr_normed_av,
+                                                timeslice_observable_corr_normed_d,
+                                                timeslice_observable_corr_normed_old,
+                                                timeslice_observable_corr_normed_av_old,
+                                                timeslice_observable_corr_normed_d_old);
 
 
-    delete [] timeslice_energy_jack;
-    delete [] timeslice_energy_corr_normed_av;
-    delete [] timeslice_energy_corr_normed_d;
-    delete [] timeslice_energy_corr_normed_av_old;
-    delete [] timeslice_energy_corr_normed_d_old;
+    delete [] timeslice_observable_jack;
+    delete [] timeslice_observable_corr_normed_av;
+    delete [] timeslice_observable_corr_normed_d;
+    delete [] timeslice_observable_corr_normed_av_old;
+    delete [] timeslice_observable_corr_normed_d_old;
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -2254,43 +2240,43 @@ void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_product[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_product[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_product[thread_id];
+        delete [] timeslice_observable_corr_product[thread_id];
     }
-    delete [] timeslice_energy_corr_product;
+    delete [] timeslice_observable_corr_product;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        delete [] timeslice_energy_corr_product_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_product_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_product_jack;
+    delete [] timeslice_observable_corr_product_jack;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        delete [] timeslice_energy_corr_normed_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_normed_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_normed_jack;
+    delete [] timeslice_observable_corr_normed_jack;
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_normed_old[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_normed_old[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_normed_old[thread_id];
+        delete [] timeslice_observable_corr_normed_old[thread_id];
     }
-    delete [] timeslice_energy_corr_normed_old;
+    delete [] timeslice_observable_corr_normed_old;
 
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4/2 + 1; timeslice++) {
-            delete [] timeslice_energy[thread_id][timeslice];
+            delete [] timeslice_observable[thread_id][timeslice];
         }
-        delete [] timeslice_energy[thread_id];
+        delete [] timeslice_observable[thread_id];
     }
-    delete [] timeslice_energy;
+    delete [] timeslice_observable;
 }
 
 
-
+//    half-spaces updates
 void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta) {
 //    float beta = 0.01*iBeta;
 
@@ -2306,11 +2292,11 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_energy = new double**[threads_per_beta];
+    double ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy[thread_id] = new double*[N4];
+        timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
-            timeslice_energy[thread_id][timeslice] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable[thread_id][timeslice] = new double[int(T_measurement / tau) + 1];
         }
     }
 
@@ -2329,7 +2315,7 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
             out_mes.open(file_name_out_measured, ios::in | ios::binary);
 
             for (int timeslice = 0; timeslice < N4; timeslice++) {
-                out_mes.read((char *) &timeslice_energy[thread_id][timeslice][t],
+                out_mes.read((char *) &timeslice_observable[thread_id][timeslice][t],
                                 sizeof(double));
             }
             out_mes.read((char *) &s[thread_id][t], sizeof(double));
@@ -2355,80 +2341,80 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
 
 
 
-    double timeslice_energy_av = 0.0;
+    double timeslice_observable_av = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_av += timeslice_energy[thread_id][timeslice][t];
+                timeslice_observable_av += timeslice_observable[thread_id][timeslice][t];
             }
         }
     }
-    timeslice_energy_av /= threads_per_beta*N4*T_measurement/tau;
+    timeslice_observable_av /= threads_per_beta * N4 * T_measurement / tau;
 
-    double timeslice_energy_d = 0.0;
+    double timeslice_observable_d = 0.0;
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4; timeslice++) {
             for (int t = 0; t < int(T_measurement/tau); t++) {
-                timeslice_energy_d += (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av)*
-                                        (timeslice_energy[thread_id][timeslice][t] - timeslice_energy_av);
+                timeslice_observable_d += (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av) *
+                                          (timeslice_observable[thread_id][timeslice][t] - timeslice_observable_av);
             }
         }
     }
-    timeslice_energy_d /= (threads_per_beta*N4*T_measurement/tau)*(threads_per_beta*N4*T_measurement/tau);
-    timeslice_energy_d = sqrt(timeslice_energy_d);
+    timeslice_observable_d /= (threads_per_beta * N4 * T_measurement / tau) * (threads_per_beta * N4 * T_measurement / tau);
+    timeslice_observable_d = sqrt(timeslice_observable_d);
 
 
 
 
-    double ***timeslice_energy_corr_product = new double**[threads_per_beta];
+    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_product[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_product[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_energy_corr_product_jack = new double*[N4/2 + 1];
+    double **timeslice_observable_corr_product_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        timeslice_energy_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
+        timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_jack = new double[threads_per_beta];
+    double *timeslice_observable_jack = new double[threads_per_beta];
     double **timeslice_energy_corr_normed_jack = new double*[N4/2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
         timeslice_energy_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_energy_corr_normed_av = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d = new double[N4/2 + 1];
-    double ***timeslice_energy_corr_normed_old = new double**[threads_per_beta];
+    double *timeslice_observable_corr_normed_av = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d = new double[N4 / 2 + 1];
+    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        timeslice_energy_corr_normed_old[thread_id] = new double*[N4/2 + 1];
+        timeslice_observable_corr_normed_old[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            timeslice_energy_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement/tau) + 1];
+            timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_energy_corr_normed_av_old = new double[N4/2 + 1];
-    double *timeslice_energy_corr_normed_d_old = new double[N4/2 + 1];
+    double *timeslice_observable_corr_normed_av_old = new double[N4 / 2 + 1];
+    double *timeslice_observable_corr_normed_d_old = new double[N4 / 2 + 1];
 
 
     MeasureScalarGlueballForBeta_v2_processing (key, iBeta,
-                s_av, s_d, tau_corr_av,
-                timeslice_energy,
-                timeslice_energy_av, timeslice_energy_d,
-                timeslice_energy_corr_product,
-                timeslice_energy_corr_product_jack,
-                timeslice_energy_jack,
-                timeslice_energy_corr_normed_jack,
-                timeslice_energy_corr_normed_av,
-                timeslice_energy_corr_normed_d,
-                timeslice_energy_corr_normed_old,
-                timeslice_energy_corr_normed_av_old,
-                timeslice_energy_corr_normed_d_old);
+                                                s_av, s_d, tau_corr_av,
+                                                timeslice_observable,
+                                                timeslice_observable_av, timeslice_observable_d,
+                                                timeslice_observable_corr_product,
+                                                timeslice_observable_corr_product_jack,
+                                                timeslice_observable_jack,
+                                                timeslice_energy_corr_normed_jack,
+                                                timeslice_observable_corr_normed_av,
+                                                timeslice_observable_corr_normed_d,
+                                                timeslice_observable_corr_normed_old,
+                                                timeslice_observable_corr_normed_av_old,
+                                                timeslice_observable_corr_normed_d_old);
 
 
-    delete [] timeslice_energy_jack;
-    delete [] timeslice_energy_corr_normed_av;
-    delete [] timeslice_energy_corr_normed_d;
-    delete [] timeslice_energy_corr_normed_av_old;
-    delete [] timeslice_energy_corr_normed_d_old;
+    delete [] timeslice_observable_jack;
+    delete [] timeslice_observable_corr_normed_av;
+    delete [] timeslice_observable_corr_normed_d;
+    delete [] timeslice_observable_corr_normed_av_old;
+    delete [] timeslice_observable_corr_normed_d_old;
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -2439,16 +2425,16 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_product[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_product[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_product[thread_id];
+        delete [] timeslice_observable_corr_product[thread_id];
     }
-    delete [] timeslice_energy_corr_product;
+    delete [] timeslice_observable_corr_product;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-        delete [] timeslice_energy_corr_product_jack[timeslice_diff];
+        delete [] timeslice_observable_corr_product_jack[timeslice_diff];
     }
-    delete [] timeslice_energy_corr_product_jack;
+    delete [] timeslice_observable_corr_product_jack;
 
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
         delete [] timeslice_energy_corr_normed_jack[timeslice_diff];
@@ -2457,21 +2443,21 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
-            delete [] timeslice_energy_corr_normed_old[thread_id][timeslice_diff];
+            delete [] timeslice_observable_corr_normed_old[thread_id][timeslice_diff];
         }
-        delete [] timeslice_energy_corr_normed_old[thread_id];
+        delete [] timeslice_observable_corr_normed_old[thread_id];
     }
-    delete [] timeslice_energy_corr_normed_old;
+    delete [] timeslice_observable_corr_normed_old;
 
 
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4/2 + 1; timeslice++) {
-            delete [] timeslice_energy[thread_id][timeslice];
+            delete [] timeslice_observable[thread_id][timeslice];
         }
-        delete [] timeslice_energy[thread_id];
+        delete [] timeslice_observable[thread_id];
     }
-    delete [] timeslice_energy;
+    delete [] timeslice_observable;
 }
 
 
@@ -2480,7 +2466,7 @@ void Measurement(unsigned int key) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(MeasureCreutzRatioForBeta, key, iBeta_low + t*iBeta_step);
+        beta_threads[t] = thread(MeasureScalarGlueballForBeta_v2_0, key, iBeta_low + t*iBeta_step);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
@@ -2503,7 +2489,7 @@ int main() {
 
 
 
-//    Equilibration(key);
+    Equilibration(key);
 
     Measurement(key);
 

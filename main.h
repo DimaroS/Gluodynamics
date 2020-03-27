@@ -9,14 +9,14 @@ const int MAX_SIZE_DIM4 = 10;
 const int N1 = 4;
 const int N2 = 4;
 const int N3 = 4;
-const int N4 = 4; // N4 == 4*(int)
+const int N4 = 8; // N4 == 4*(int)
 const int N_loops = 2;
 const float tau = 1.0;
 const float T_preequilibration = 100*tau;
-const float T_equilibration = 300*tau;
-const float T_measurement = 500*tau;
-const int threads_per_beta = 4;
-const unsigned int multihit_number = 1;
+const float T_equilibration = 500*tau;
+const float T_measurement = 10000*tau;
+const int threads_per_beta = 8;
+const unsigned int multihit_number = 8;
 
 const float level_I_tau = 1.0;
 const int level_I_multihit_number = 8;
@@ -28,9 +28,9 @@ const int level_II_number_of_measurements = 1;
 
 const int loop_number_of_measurements = 8;
 
-const int iBeta_low = 50;
+const int iBeta_low = 200;
 const int iBeta_step = 50;
-const int iBeta_high = 420;
+const int iBeta_high = 220;
 const bool first_file_initialization = false;
 
 
