@@ -615,7 +615,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 float PeriodicGluodynamicsDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-        ::/*HeatBath_*/MonteCarloStep(float number_of_steps, unsigned int number_of_hits) {
+        ::HeatBath_MonteCarloStep(float number_of_steps, unsigned int number_of_hits) {
     action_measured = false;
     unsigned int all_hits_counter = 0;
     for (int successful_hits_counter = 0; successful_hits_counter <
@@ -657,12 +657,12 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 
 
 //    MatrixSU<Float, PrngClass> ZXC(0);
-//    m[i][j][k][l].up(d) = MatrixSU<Float, PrngClass>(0, rand_gen()).;
+//    m[i][j][k][l].up(d) = MatrixSU<Float, PrngClass>(0, rand_gen());
     m[i][j][k][l].up(d).HeatBathMatrix(rand_gen(), beta, Usim);
 
     delete [] Usim;
 
-//    cout << '$';
+    cout << '$';
     return 1;
 }
 
@@ -673,7 +673,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
 float PeriodicGluodynamicsDim4_SU_Base
-        <MatrixSU, CycledArrayDim4, Float, PrngClass>::HeatBath_MonteCarloStep
+        <MatrixSU, CycledArrayDim4, Float, PrngClass>::/*HeatBath_*/MonteCarloStep
                         (float number_of_steps, unsigned int number_of_hits) {
     for (int i = 0; i < N1; i++) {
         for (int j = 0; j < N2; j++) {

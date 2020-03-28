@@ -29,6 +29,8 @@ const char system_configuration_file_format[500] =
     "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 const char system_measurements_file_format[500] =
     "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
+const char system_autocorrelations_for_beta_file_format[500] =
+        "/media/dimaros/LinuxDATA/GluodynamicsDATA/Autocorrelations_%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
 const char system_single_measurement_file_format[500] =
     "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 //   /media/dimaros/LinuxDATA/
@@ -233,11 +235,9 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
 
 
 
-        cout << beta << '\t' << thread_id << '\t' << t  << '\t'  << s[t] << '\t'
-                << endl;
+        cout << beta << '\t' << thread_id << '\t' << t  << '\t'  << s[t] << '\t' << endl;
 
-        out_loc << beta << ',' << t << ',' << s[t]
-                    << '\n';
+        out_loc << beta << ',' << t << ',' << s[t] << '\n';
         out_loc.close();
         out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
@@ -283,7 +283,8 @@ double Variance (double **s, int i_max, int j_max) {
 
 
 
-void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, double **s) {
+void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, double **s,
+                                                        unsigned int key, int iBeta) {
     s_av = Average(s, threads_per_beta, int(T_measurement/tau));
 
 
@@ -343,7 +344,23 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         tau_corr_av += tau_corr[thread_id];
     }
-    tau_corr_av /= threads_per_beta;
+
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        tau_corr_av /= threads_per_beta;
+        char out_loc_file_name[500];
+        sprintf(out_loc_file_name, system_autocorrelations_for_beta_file_format, N1, N2, N3, N4,
+                bc_code, matr_dim, key, iBeta, thread_id);
+        ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+        out_loc << tau_corr[thread_id] << '\n';
+        for (int t = 0; t < int(T_measurement/3/tau); t++) {
+            out_loc << t << ',' << s_timecorr_normed[t][thread_id] << '\n';
+        }
+
+        out_loc.close();
+    }
+
 
     for (int t = 0; t < int(T_measurement/3/tau) + 1; t++) {
         delete [] s_timecorr_normed[t];
@@ -403,7 +420,7 @@ void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 
 
@@ -691,7 +708,7 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 //    double tau_corr_d = 0.0;
 //    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1321,7 +1338,7 @@ void MeasureScalarGlueballForBeta_v1_0(unsigned int key, int iBeta) {
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 //    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
 //        for (int t = 0; t < int(T_measurement/3/tau); t++) {
@@ -1507,7 +1524,7 @@ void MeasureScalarGlueballForBeta_v1_0_precalculated(unsigned int key, int iBeta
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 //    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
 //        for (int t = 0; t < int(T_measurement/3/tau); t++) {
@@ -1732,7 +1749,7 @@ void MeasureScalarGlueballForBeta_ReadingThreadFunction_v2 (unsigned int key,
 }
 
 
-
+//    half-spaces updates
 
 void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
                                                 double s_av, double s_d, double tau_corr_av,
@@ -1762,14 +1779,10 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int t = 0; t < int(T_measurement/tau); t++) {
-            for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
+            for (int timeslice_diff = 0; timeslice_diff <= N4/2; timeslice_diff++) {
+
                 timeslice_observable_corr_product[thread_id][timeslice_diff][t] = 0.0;
-            }
-        }
-    }
-    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        for (int t = 0; t < int(T_measurement/tau); t++) {
-            for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
+
                 for (int timeslice_base = N4/2 + 1 - timeslice_diff; timeslice_base < N4/2; timeslice_base++) {
                     timeslice_observable_corr_product[thread_id][timeslice_diff][t] +=
                             timeslice_observable[thread_id][timeslice_base][t]
@@ -1792,7 +1805,9 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
 
     for (int timeslice_diff = 2; timeslice_diff <= N4/2; timeslice_diff++) {
         for (int thread_id_base = 0; thread_id_base < threads_per_beta; thread_id_base++) {
+
             timeslice_observable_corr_product_jack[timeslice_diff][thread_id_base] = 0.0;
+
             for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
                 if (thread_id_base == thread_id) {
                     continue;
@@ -1933,16 +1948,13 @@ void MeasureScalarGlueballForBeta_v2_processing(unsigned int key, int iBeta,
                 << timeslice_observable_corr_normed_d[timeslice_diff] << '\n';
     }
     out.close();
-    out.open(output_file_name, ios::out | ios::app);
-
-
-    out.close();
 }
 
 
 //  half-spaces updates
+
 void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
-//    float beta = 0.01*iBeta;
+    float beta = 0.01*iBeta;
 
 
 
@@ -1986,13 +1998,8 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
-//    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-//        for (int t = 0; t < int(T_measurement/3/tau); t++) {
-//            out << t << ',' << s_timecorr_normed[t][thread_id] << '\n';
-//        }
-//    }
 
 
 
@@ -2071,14 +2078,10 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
     delete [] timeslice_observable_corr_normed_av_old;
     delete [] timeslice_observable_corr_normed_d_old;
 
-
-
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         delete [] s[thread_id];
     }
     delete [] s;
-
-
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
@@ -2105,8 +2108,6 @@ void MeasureScalarGlueballForBeta_v2_0(unsigned int key, int iBeta) {
         delete [] timeslice_observable_corr_normed_old[thread_id];
     }
     delete [] timeslice_observable_corr_normed_old;
-
-
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         for (int timeslice = 0; timeslice < N4/2 + 1; timeslice++) {
@@ -2164,7 +2165,7 @@ void MeasureScalarGlueballForBeta_v2_1(unsigned int key, int iBeta) {
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 //    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
 //        for (int t = 0; t < int(T_measurement/3/tau); t++) {
@@ -2331,7 +2332,7 @@ void MeasureScalarGlueballForBeta_v2_0_precalculated(unsigned int key, int iBeta
     double s_av = 0.0;
     double s_d = 0.0;
     double tau_corr_av = 0.0;
-    ActionAutocorrelation(s_av, s_d, tau_corr_av, s);
+    ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
 
 //    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
 //        for (int t = 0; t < int(T_measurement/3/tau); t++) {
@@ -2466,7 +2467,7 @@ void Measurement(unsigned int key) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(MeasureScalarGlueballForBeta_v2_0, key, iBeta_low + t*iBeta_step);
+        beta_threads[t] = thread(MeasureCreutzRatioForBeta, key, iBeta_low + t*iBeta_step);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();

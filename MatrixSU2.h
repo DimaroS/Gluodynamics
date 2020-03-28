@@ -42,7 +42,7 @@ class MatrixSU2
         MatrixSU2() {}
         MatrixSU2 UniformlyRandomMatrix(unsigned int seed);
         MatrixSU2 AroundIdentityMatrix(unsigned int seed, Float epsilon);
-        MatrixSU2 HeatBathMatrix(unsigned int seed, Float beta, MatrixSU2<Float, PrngClass> A[6]);
+        MatrixSU2 HeatBathMatrix(unsigned int seed, Float beta, MatrixSU2<Float, PrngClass> *A);
 
 
         Float Trace();
@@ -373,7 +373,7 @@ MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::AroundIdentityMatrix
 
 template <typename Float, class PrngClass>
 MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::HeatBathMatrix
-            (unsigned int _seed, Float beta, MatrixSU2<Float, PrngClass> A[6]) {
+            (unsigned int _seed, Float beta, MatrixSU2<Float, PrngClass> *A) {
     Float __a[4] = {0.0, 0.0, 0.0, 0.0};
     //cout << '!';
     for (int i = 0; i < 6; i++) {
