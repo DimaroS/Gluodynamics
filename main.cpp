@@ -19,66 +19,101 @@ typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
 const int matr_dim = 3;
 const char bc_code = 'p'; //boundary conditions code
+const char working_directory[500] =
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/";
 const char system_preconfiguration_file_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%d%cSU%dSystem_%d.save";
+    "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
+    "%s%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
 const char system_log_file_for_beta_preeq_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d%d%d%doutput_%cSU%d_%u_%d.csv";
+    "%s%d%d%d%doutput_%cSU%d_%u_%d.csv";
 const char system_configuration_file_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
+    "%s%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 const char system_measurements_file_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
+    "%sMeasured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
 const char system_autocorrelations_for_beta_file_format[500] =
-        "/media/dimaros/LinuxDATA/GluodynamicsDATA/Autocorrelations_%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
+    "%sAutocorrelations_%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
 const char system_single_measurement_file_format[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/Measured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
+    "%sMeasured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 //   /media/dimaros/LinuxDATA/
 //   /home/itep/sychev/
 
 void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
-    float beta = 0.01*iBeta;
-    float g0 = sqrt(2*(matr_dim)/beta);
+    float beta = 0.01 * iBeta;
+    float g0 = sqrt(2 * (matr_dim) / beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
     char out_loc_file_name[500];
-    sprintf(out_loc_file_name, system_log_file_for_beta_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory,
+            N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
     ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
     char file_name_in[500];
-    sprintf(file_name_in, system_preconfiguration_file_format, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
+    sprintf(file_name_in, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
     ifstream in_sys(file_name_in, ios::in | ios::binary);
     in_sys >> System;
     in_sys.close();
     System.Seed(seed);
 
 
-
-    for (int t = 0; t < int(T_equilibration/tau); t++) {
+    for (int t = 0; t < int(T_equilibration / tau); t++) {
         chrono::time_point<chrono::high_resolution_clock>
-                        start_time = chrono::high_resolution_clock::now();
+                start_time = chrono::high_resolution_clock::now();
 
         float hit_ratio = System.MonteCarloStep(tau, multihit_number);
 
 
         chrono::time_point<chrono::high_resolution_clock>
-                        end_time = chrono::high_resolution_clock::now();
+                end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> diff_time = end_time - start_time;
 
 
-        double s = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
+        double s = 1.0 + System.Action() * g0 * g0 / 2 / (matr_dim) / N1 / N2 / N3 / N4 / 6;
 
-        cout << "eq " << beta << '\t' << t + int(T_preequilibration/tau) << '\t' << s << '\t'
-                << hit_ratio << "\t\t"
-                << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count()
-                << " hits/sec"<< endl;
+        cout << "eq " << beta << '\t' << t + int(T_preequilibration / tau) << '\t' << s << '\t'
+             << hit_ratio << "\t\t"
+             << (int) 4 * tau * N1 * N2 * N3 * N4 / hit_ratio / diff_time.count()
+             << " hits/sec" << endl;
 
-        out_loc << "eq," << beta << ',' << t + int(T_preequilibration/tau) << ',' << s << ',' << hit_ratio << ','
-            << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
+        out_loc << "eq," << beta << ',' << t + int(T_preequilibration / tau) << ',' << s << ',' << hit_ratio << ','
+                << (int) 4 * tau * N1 * N2 * N3 * N4 / hit_ratio / diff_time.count() << '\n';
         out_loc.close();
         out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
+
+    char file_name_out[500];
+    sprintf(file_name_out, system_configuration_file_format,
+            working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, 0);
+    ofstream out_sys(file_name_out, ios::out | ios::binary | ios::trunc);
+    out_sys << System;
+    out_sys.close();
+
+    out_loc.close();
+}
+
+
+
+
+
+
+void AdditionalConfigurationsForBeta(unsigned int key, int iBeta, int thread_id, int prev_config_number) {
+    float beta = 0.01 * iBeta;
+    float g0 = sqrt(2 * (matr_dim) / beta);
+    Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
+
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory,
+            N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+
+    char file_name_in[500];
+    sprintf(file_name_in, system_configuration_file_format, working_directory,
+            iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number);
+    ifstream in_sys(file_name_in, ios::in | ios::binary);
+    in_sys >> System;
+    in_sys.close();
 
 
 
@@ -98,19 +133,20 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
 
 
         char file_name_out[500];
-        sprintf(file_name_out, system_configuration_file_format, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+        sprintf(file_name_out, system_configuration_file_format, working_directory,
+                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
         ofstream out_sys(file_name_out, ios::out | ios::binary | ios::trunc);
         out_sys << System;
         out_sys.close();
 
 
 
-        cout << beta << '\t' << t << '\t' << s << '\t'
+        cout << "config" << '\t' << beta << '\t' << t << '\t' << s << '\t'
                 << hit_ratio << "\t\t"
                 << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count()
                 << " hits/sec"<< endl;
 
-        out_loc << beta << ',' << t << ',' << s << ',' << hit_ratio << ','
+        out_loc << "config," <<  beta << ',' << t << ',' << s << ',' << hit_ratio << ','
             << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
         out_loc.close();
         out_loc.open(out_loc_file_name, ios::out | ios::app);
@@ -119,21 +155,23 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
     out_loc.close();
 }
 
-void Equilibration(unsigned int key) {
+
+
+void PreEquilibration(unsigned int key) {
     for (int iBeta = iBeta_low; iBeta <= iBeta_high; iBeta += iBeta_step) {
         float beta = 0.01*iBeta;
         float g0 = sqrt(2*(matr_dim)/beta);
         Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-        char file_name[500];
-        sprintf(file_name, system_log_file_for_beta_preeq_format, N1, N2, N3, N4,
-                                                                    bc_code, matr_dim, key, iBeta);
-        ofstream out_loc(file_name, ios::out | ios::app);
+        char out_loc_file_name[500];
+        sprintf(out_loc_file_name, system_log_file_for_beta_preeq_format, working_directory, N1, N2, N3, N4,
+                bc_code, matr_dim, key, iBeta);
+        ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
         if (iBeta != iBeta_low || first_file_initialization) {
             char file_name_in[500];
-            sprintf(file_name_in, system_preconfiguration_file_format, N1, N2, N3, N4,
+            sprintf(file_name_in, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4,
                                                             bc_code, matr_dim, iBeta - iBeta_step);
             ifstream in_sys(file_name_in, ios::in | ios::binary);
             in_sys >> System;
@@ -167,35 +205,57 @@ void Equilibration(unsigned int key) {
             out_loc << "pre," << beta << ',' << t << ',' << s << ',' << hit_ratio << ','
                 << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
             out_loc.close();
-            out_loc.open(file_name, ios::out | ios::app);
+            out_loc.open(out_loc_file_name, ios::out | ios::app);
         }
 
         char file_name_out[500];
-        sprintf(file_name_out, system_preconfiguration_file_format, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
+        sprintf(file_name_out, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
         ofstream out_sys(file_name_out, ios::out | ios::binary | ios::trunc);
         out_sys << System;
         out_sys.close();
 
         out_loc.close();
     }
+}
 
-    thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1][threads_per_beta];
+
+void Equilibration(unsigned int key) {
+    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
     mt19937 seed_gen(key);
 
-    for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
         for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
             beta_threads[t][thread_for_beta_id] = thread(EquilibrateForBeta,
-                key, iBeta_low + t*iBeta_step, seed_gen(), thread_for_beta_id);
+                                                         key, iBeta_low + t * iBeta_step, seed_gen(),
+                                                         thread_for_beta_id);
         }
     }
 
-    for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
         for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
             beta_threads[t][thread_for_beta_id].join();
         }
     }
 }
 
+
+
+void CreateMeasurementConfigurations(unsigned int key, int prev_config_number) {
+    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id] = thread(AdditionalConfigurationsForBeta,
+                                                         key, iBeta_low + t * iBeta_step, thread_for_beta_id,
+                                                         prev_config_number);
+        }
+    }
+
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id].join();
+        }
+    }
+}
 
 
 
@@ -209,7 +269,7 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
     char out_loc_file_name[500];
-    sprintf(out_loc_file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
             bc_code, matr_dim, key, iBeta, thread_id);
     ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
@@ -217,7 +277,7 @@ void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in, system_configuration_file_format,
+        sprintf(file_name_in, system_configuration_file_format, working_directory,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
@@ -349,8 +409,8 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         char out_loc_file_name[500];
-        sprintf(out_loc_file_name, system_autocorrelations_for_beta_file_format, N1, N2, N3, N4,
-                bc_code, matr_dim, key, iBeta, thread_id);
+        sprintf(out_loc_file_name, system_autocorrelations_for_beta_file_format,
+                working_directory, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
         ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
         out_loc << tau_corr[thread_id] << '\n';
@@ -376,7 +436,8 @@ void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
 
 
     char output_file_name[500];
-    sprintf(output_file_name, system_measurements_file_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
+    sprintf(output_file_name, system_measurements_file_format,
+            working_directory, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
     ofstream out(output_file_name, ios::out | ios::app);
 
 
@@ -579,7 +640,7 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
     char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
+    sprintf(file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
                                     bc_code, matr_dim, key, iBeta, thread_id);
     ofstream out_loc(file_name, ios::out | ios::app);
 
@@ -587,8 +648,7 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in,
-        system_configuration_file_format,
+        sprintf(file_name_in, system_configuration_file_format, working_directory,
                 iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
@@ -600,9 +660,9 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
         char file_name_out_measured[500];
 
         sprintf(file_name_out_measured, system_single_measurement_file_format,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
-        ofstream out_mes(file_name_out_measured, ios::out | ios::binary);
+        ofstream out_measured(file_name_out_measured, ios::out | ios::binary);
 
 
 
@@ -616,22 +676,13 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
 
                 W[i_direction][j_direction][t] = System.AverageOrientedWilsonLoop(1, 1,
                                                 i_direction, j_direction);
+
+                out_measured.write((const char *) &W[i_direction][j_direction][t],
+                                   sizeof(double));
             }
         }
-
-
-        for (int i_direction = 0; i_direction <= 3; i_direction++) {
-            for (int j_direction = 0; j_direction <= 3; j_direction++) {
-                if (i_direction == j_direction) {
-                    continue;
-                }
-
-                out_mes.write((const char *) &W[i_direction][j_direction][t],
-                            sizeof(double));
-            }
-        }
-        out_mes.write((const char *) &s[t], sizeof(double));
-        out_mes.close();
+        out_measured.write((const char *) &s[t], sizeof(double));
+        out_measured.close();
 
 
 
@@ -656,7 +707,8 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
 
 
     char output_file_name[500];
-    sprintf(output_file_name, system_measurements_file_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
+    sprintf(output_file_name, system_measurements_file_format, working_directory,
+            N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
     ofstream out(output_file_name, ios::out | ios::app);
 
 
@@ -699,14 +751,6 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
     double s_d = 0.0;
     double tau_corr_av = 0.0;
     ActionAutocorrelation(s_av, s_d, tau_corr_av, s, key, iBeta);
-
-//    double tau_corr_d = 0.0;
-//    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-//        tau_corr_d += (tau_corr[thread_id] - tau_corr_av)*
-//                        (tau_corr[thread_id] - tau_corr_av);
-//    }
-//    tau_corr_d /= threads_per_beta - 1;
-//    tau_corr_d = sqrt(tau_corr_d);
 
 
     double W_av[4][4];
@@ -771,11 +815,8 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
 
 
 
-    out << beta << ',' << tau_corr_av << /*',' << tau_corr_d << */'\n';
+    out << beta << ',' << tau_corr_av << '\n';
 
-//    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-//        out << beta << ',' << thread_id << ',' << tau_corr[thread_id] << '\n';
-//    }
 
     out << beta << ',' << s_av << ',' << s_d << ',' << tau_corr_av << '\n';
     out.close();
@@ -792,13 +833,6 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
                 << ',' << W_av[i_direction][j_direction] << ',' << W_d[i_direction][j_direction] << '\n';
         }
     }
-
-
-//    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-//        for (int t = 0; t < int(T_measurement/3/tau); t++) {
-//            out << t << ',' << s_timecorr_normed[t][thread_id] << '\n';
-//        }
-//    }
 
     out.close();
 
@@ -827,15 +861,15 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
 
 //  odd layers updates then even layers updates
 void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
-            int iBeta, int thread_id) {
+            int iBeta, int thread_id, int prev_config_number) {
     float beta = 0.01*iBeta;
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-    char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
-                                    bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(file_name, ios::out | ios::app);
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
+            bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
     double *s = new double[int(T_measurement/tau) + 1];
@@ -848,8 +882,8 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in, system_configuration_file_format,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+        sprintf(file_name_in, system_configuration_file_format, working_directory,
+                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
         in_sys >> System;
@@ -862,7 +896,8 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
         char file_name_out_measured[500];
 
         sprintf(file_name_out_measured, system_single_measurement_file_format,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                working_directory, iBeta, N1, N2, N3, N4,
+                bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ofstream out_measured(file_name_out_measured, ios::out | ios::binary);
 
@@ -1065,7 +1100,7 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
         out_loc << beta << ',' << t << ',' << s[t]
                     << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
     out_loc.close();
@@ -1080,14 +1115,14 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
 
 
 
-void CollectData_ScalarGlueballForBeta_v1(unsigned int key, int iBeta) {
+void CollectData_ScalarGlueballForBeta_v1(unsigned int key, int iBeta, int prev_config_number) {
 
     thread thread_array[threads_per_beta];
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         thread_array[thread_id] =
                 thread(CollectData_ScalarGlueballForBeta_ThreadFunction_v1, key,
-                       iBeta, thread_id);
+                       iBeta, thread_id, prev_config_number);
     }
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1143,7 +1178,7 @@ void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mod
             char file_name_measured_data[500];
 
             sprintf(file_name_measured_data, system_single_measurement_file_format,
-                    iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                    working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
 
             ifstream measured_data(file_name_measured_data, ios::in | ios::binary);
 
@@ -1224,7 +1259,8 @@ void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mod
 
 
     char output_file_name[500];
-    sprintf(output_file_name, system_measurements_file_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
+    sprintf(output_file_name, system_measurements_file_format,
+            working_directory, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
     ofstream out(output_file_name, ios::out | ios::app);
 
 
@@ -1448,15 +1484,15 @@ void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mod
 //  half-spaces updates
 
 void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
-            int iBeta, int thread_id) {
+            int iBeta, int thread_id, int prev_config_number) {
     float beta = 0.01*iBeta;
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-    char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, N1, N2, N3, N4,
-                                    bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(file_name, ios::out | ios::app);
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
+            bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
 
@@ -1472,8 +1508,8 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
-        sprintf(file_name_in, system_configuration_file_format,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+        sprintf(file_name_in, system_configuration_file_format, working_directory,
+                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
         in_sys >> System;
@@ -1485,7 +1521,8 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
         char file_name_out_measured[500];
 
         sprintf(file_name_out_measured, system_single_measurement_file_format,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                working_directory, iBeta, N1, N2, N3, N4,
+                bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ofstream out_mes(file_name_out_measured, ios::out | ios::binary);
 
@@ -1536,7 +1573,7 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
         out_loc << beta << ',' << t << ',' << s[t]
                     << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
     out_loc.close();
@@ -1554,14 +1591,14 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
 
 
 
-void CollectData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta) {
+void CollectData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int prev_config_number) {
 
     thread thread_array[threads_per_beta];
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         thread_array[thread_id] =
                 thread(CollectData_ScalarGlueballForBeta_ThreadFunction_v2, key,
-                       iBeta, thread_id);
+                       iBeta, thread_id, prev_config_number);
     }
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1587,7 +1624,8 @@ public:
 //    mode = 2 for using external values
 
 void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
-                                    double timeslice_observable_av, double timeslice_observable_d) {
+                                    double timeslice_observable_av, double timeslice_observable_d,
+                                    int prev_config_number) {
     float beta = 0.01*iBeta;
 
     if (mode != 1 && mode != 2) {
@@ -1596,7 +1634,8 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
     }
 
     char output_file_name[500];
-    sprintf(output_file_name, system_measurements_file_format, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
+    sprintf(output_file_name, system_measurements_file_format,
+            working_directory, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
     ofstream out(output_file_name, ios::out | ios::app);
 
 
@@ -1623,7 +1662,7 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
             char file_name_measured_data[500];
 
             sprintf(file_name_measured_data, system_single_measurement_file_format,
-                    iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                    working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
             ifstream measured_data(file_name_measured_data, ios::in | ios::binary);
 
@@ -1938,22 +1977,24 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
 
 
 
-void CollectData(unsigned int key) {
+void CollectData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(CollectData_ScalarGlueballForBeta_v2, key, iBeta_low + t*iBeta_step);
+        beta_threads[t] = thread(CollectData_ScalarGlueballForBeta_v2,
+                key, iBeta_low + t*iBeta_step, prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
     }
 }
 
-void ProcessData(unsigned int key) {
+void ProcessData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(ProcessData_ScalarGlueballForBeta_v2, key, iBeta_low + t*iBeta_step, 1, 0.0, 0.0);
+        beta_threads[t] = thread(ProcessData_ScalarGlueballForBeta_v2, key, iBeta_low + t*iBeta_step,
+                1, 0.0, 0.0, prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
@@ -1974,13 +2015,15 @@ int main() {
 
 
 
-
+    PreEquilibration(key);
 
     Equilibration(key);
 
-    CollectData(key);
+    CreateMeasurementConfigurations(key, 0);
 
-    ProcessData(key);
+    CollectData(key, 0);
+
+    ProcessData(key, 0);
 
 
 
