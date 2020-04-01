@@ -11,16 +11,15 @@
 
 using namespace std;
 
-//1.73458666666667 for 3x3x3x8 pSU3
 
 
 
-typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
+typedef xReflectionGluodynamicsDim4_SU<MatrixSU2, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
-const int matr_dim = 3;
-const char bc_code = 'p'; //boundary conditions code
+const int matr_dim = 2;
+const char bc_code = 'x'; //boundary conditions code
 const char working_directory[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/xSU2_3338/";
 const char system_preconfiguration_file_format[500] =
     "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
@@ -38,7 +37,71 @@ const char system_single_measurement_file_format[500] =
 //   /media/dimaros/LinuxDATA/
 //   /home/itep/sychev/
 
-void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
+
+void PreEquilibration(unsigned int key) {
+    for (int iBeta = iBeta_low; iBeta <= iBeta_high; iBeta += iBeta_step) {
+        float beta = 0.01*iBeta;
+        float g0 = sqrt(2*(matr_dim)/beta);
+        Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
+
+        char out_loc_file_name[500];
+        sprintf(out_loc_file_name, system_log_file_for_beta_preeq_format, working_directory, N1, N2, N3, N4,
+                bc_code, matr_dim, key, iBeta);
+        ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+
+        if (iBeta != iBeta_low || first_file_initialization) {
+            char file_name_in[500];
+            sprintf(file_name_in, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4,
+                    bc_code, matr_dim, iBeta - iBeta_step);
+            ifstream in_sys(file_name_in, ios::in | ios::binary);
+            in_sys >> System;
+            in_sys.close();
+        }
+
+        System.Set_beta(beta);
+        System.Set_t(0.0);
+
+        for (int t = 0; t < int(T_preequilibration/tau); t++) {
+            chrono::time_point<chrono::high_resolution_clock>
+                    start_time = chrono::high_resolution_clock::now();
+
+            float hit_ratio = System.MonteCarloStep(tau, multihit_number);
+
+
+            chrono::time_point<chrono::high_resolution_clock>
+                    end_time = chrono::high_resolution_clock::now();
+            chrono::duration<double> diff_time = end_time - start_time;
+
+
+            double s = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
+
+
+
+            cout << "pre " << beta << '\t' << t << '\t' << s << '\t'
+                 << hit_ratio << "\t\t"
+                 << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count()
+                 << " hits/sec"<< endl;
+
+            out_loc << "pre," << beta << ',' << t << ',' << s << ',' << hit_ratio << ','
+                    << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
+            out_loc.close();
+            out_loc.open(out_loc_file_name, ios::out | ios::app);
+        }
+
+        char file_name_out[500];
+        sprintf(file_name_out, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
+        ofstream out_sys(file_name_out, ios::out | ios::binary | ios::trunc);
+        out_sys << System;
+        out_sys.close();
+
+        out_loc.close();
+    }
+}
+
+
+
+void EquilibrateForBeta_ThreadFunction(unsigned int key, int iBeta, int seed, int thread_id) {
     float beta = 0.01 * iBeta;
     float g0 = sqrt(2 * (matr_dim) / beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
@@ -96,8 +159,7 @@ void EquilibrateForBeta(unsigned int key, int iBeta, int seed, int thread_id) {
 
 
 
-
-void AdditionalConfigurationsForBeta(unsigned int key, int iBeta, int thread_id, int prev_config_number) {
+void AdditionalConfigurationsForBeta_ThreadFunction(unsigned int key, int iBeta, int thread_id, int prev_config_number) {
     float beta = 0.01 * iBeta;
     float g0 = sqrt(2 * (matr_dim) / beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
@@ -155,155 +217,6 @@ void AdditionalConfigurationsForBeta(unsigned int key, int iBeta, int thread_id,
     out_loc.close();
 }
 
-
-
-void PreEquilibration(unsigned int key) {
-    for (int iBeta = iBeta_low; iBeta <= iBeta_high; iBeta += iBeta_step) {
-        float beta = 0.01*iBeta;
-        float g0 = sqrt(2*(matr_dim)/beta);
-        Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
-
-        char out_loc_file_name[500];
-        sprintf(out_loc_file_name, system_log_file_for_beta_preeq_format, working_directory, N1, N2, N3, N4,
-                bc_code, matr_dim, key, iBeta);
-        ofstream out_loc(out_loc_file_name, ios::out | ios::app);
-
-
-        if (iBeta != iBeta_low || first_file_initialization) {
-            char file_name_in[500];
-            sprintf(file_name_in, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4,
-                                                            bc_code, matr_dim, iBeta - iBeta_step);
-            ifstream in_sys(file_name_in, ios::in | ios::binary);
-            in_sys >> System;
-            in_sys.close();
-        }
-
-        System.Set_beta(beta);
-        System.Set_t(0.0);
-
-        for (int t = 0; t < int(T_preequilibration/tau); t++) {
-            chrono::time_point<chrono::high_resolution_clock>
-                            start_time = chrono::high_resolution_clock::now();
-
-            float hit_ratio = System.MonteCarloStep(tau, multihit_number);
-
-
-            chrono::time_point<chrono::high_resolution_clock>
-                            end_time = chrono::high_resolution_clock::now();
-            chrono::duration<double> diff_time = end_time - start_time;
-
-
-            double s = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
-
-
-
-            cout << "pre " << beta << '\t' << t << '\t' << s << '\t'
-                    << hit_ratio << "\t\t"
-                    << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count()
-                    << " hits/sec"<< endl;
-
-            out_loc << "pre," << beta << ',' << t << ',' << s << ',' << hit_ratio << ','
-                << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
-            out_loc.close();
-            out_loc.open(out_loc_file_name, ios::out | ios::app);
-        }
-
-        char file_name_out[500];
-        sprintf(file_name_out, system_preconfiguration_file_format, working_directory, N1, N2, N3, N4, bc_code, matr_dim, iBeta);
-        ofstream out_sys(file_name_out, ios::out | ios::binary | ios::trunc);
-        out_sys << System;
-        out_sys.close();
-
-        out_loc.close();
-    }
-}
-
-
-void Equilibration(unsigned int key) {
-    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
-    mt19937 seed_gen(key);
-
-    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
-        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
-            beta_threads[t][thread_for_beta_id] = thread(EquilibrateForBeta,
-                                                         key, iBeta_low + t * iBeta_step, seed_gen(),
-                                                         thread_for_beta_id);
-        }
-    }
-
-    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
-        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
-            beta_threads[t][thread_for_beta_id].join();
-        }
-    }
-}
-
-
-
-void CreateMeasurementConfigurations(unsigned int key, int prev_config_number) {
-    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
-    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
-        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
-            beta_threads[t][thread_for_beta_id] = thread(AdditionalConfigurationsForBeta,
-                                                         key, iBeta_low + t * iBeta_step, thread_for_beta_id,
-                                                         prev_config_number);
-        }
-    }
-
-    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
-        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
-            beta_threads[t][thread_for_beta_id].join();
-        }
-    }
-}
-
-
-
-
-
-
-void MeasureCreutzRatioForBeta_ReadingThreadFunction (unsigned int key,
-            int iBeta, int thread_id, double *s, double ***W) {
-    float beta = 0.01*iBeta;
-    float g0 = sqrt(2*(matr_dim)/beta);
-    Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
-
-    char out_loc_file_name[500];
-    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
-            bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
-
-
-    for (int t = 0; t < int(T_measurement/tau); t++) {
-        char file_name_in[500];
-
-        sprintf(file_name_in, system_configuration_file_format, working_directory,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
-
-        ifstream in_sys(file_name_in, ios::in | ios::binary);
-        in_sys >> System;
-        in_sys.close();
-
-        s[t] = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
-
-        for (int i = 0; i < N_loops; i++) {
-            for (int j = 0; j <= i; j++) {
-                W[i][j][t] = System.AverageWilsonLoop(i+1, j+1);
-                W[j][i][t] = W[i][j][t];
-            }
-        }
-
-
-
-        cout << beta << '\t' << thread_id << '\t' << t  << '\t'  << s[t] << '\t' << endl;
-
-        out_loc << beta << ',' << t << ',' << s[t] << '\n';
-        out_loc.close();
-        out_loc.open(out_loc_file_name, ios::out | ios::app);
-    }
-
-    out_loc.close();
-}
 
 
 
@@ -431,7 +344,113 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
 
 
 
-void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
+void CollectData_CreutzRatioForBeta_ThreadFunction (unsigned int key,
+                                                      int iBeta, int thread_id, int prev_config_number) {
+    float beta = 0.01*iBeta;
+    float g0 = sqrt(2*(matr_dim)/beta);
+    Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
+
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
+            bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+
+    double *s = new double[int(T_measurement/tau) + 1];
+
+    double ***W = new double**[N_loops];
+    for (int i = 0; i < N_loops; i++) {
+        W[i] = new double*[N_loops];
+        for (int j = 0; j < N_loops; j++) {
+            W[i][j] = new double[int(T_measurement/tau) + 1];
+        }
+    }
+
+
+
+    for (int t = 0; t < int(T_measurement/tau); t++) {
+        char file_name_in[500];
+
+        sprintf(file_name_in, system_configuration_file_format, working_directory,
+                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
+
+        ifstream in_sys(file_name_in, ios::in | ios::binary);
+        in_sys >> System;
+        in_sys.close();
+
+
+
+        s[t] = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
+
+        for (int i = 0; i < N_loops; i++) {
+            for (int j = 0; j <= i; j++) {
+                W[i][j][t] = System.AverageWilsonLoop(i+1, j+1);
+                W[j][i][t] = W[i][j][t];
+            }
+        }
+
+
+
+
+        char file_name_out_measured[500];
+
+        sprintf(file_name_out_measured, system_single_measurement_file_format,
+                working_directory, iBeta, N1, N2, N3, N4,
+                bc_code, matr_dim, thread_id, prev_config_number + t + 1);
+
+        ofstream out_measured(file_name_out_measured, ios::out | ios::binary);
+
+        for (int i = 0; i < N_loops; i++) {
+            for (int j = 0; j < N_loops; j++) {
+                out_measured.write((const char *) &W[i][j][t], sizeof(double));
+            }
+        }
+        out_measured.write((const char *) &s[t], sizeof(double));
+        out_measured.close();
+
+
+
+
+
+        cout << beta << '\t' << thread_id << '\t' << t  << '\t'  << s[t] << '\t' << endl;
+
+        out_loc << beta << ',' << t << ',' << s[t] << '\n';
+        out_loc.close();
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
+    }
+
+    out_loc.close();
+
+    delete [] s;
+    for (int i = 0; i < N_loops; i++) {
+        for (int j = 0; j < N_loops; j++) {
+            delete [] W[i][j];
+        }
+        delete [] W[i];
+    }
+    delete [] W;
+}
+
+
+void CollectData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config_number) {
+
+    thread thread_array[threads_per_beta];
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        thread_array[thread_id] =
+                thread(CollectData_CreutzRatioForBeta_ThreadFunction, key,
+                       iBeta, thread_id, prev_config_number);
+    }
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        thread_array[thread_id].join();
+    }
+}
+
+
+
+
+void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config_number) {
     float beta = 0.01*iBeta;
 
 
@@ -459,17 +478,24 @@ void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
     }
 
 
-
-    thread thread_array[threads_per_beta];
-
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        thread_array[thread_id] =
-            thread(MeasureCreutzRatioForBeta_ReadingThreadFunction, key,
-                iBeta, thread_id, s[thread_id], W[thread_id]);
-    }
+        for (int t = 0; t < int(T_measurement/tau); t++) {
+            char file_name_measured_data[500];
 
-    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        thread_array[thread_id].join();
+            sprintf(file_name_measured_data, system_single_measurement_file_format,
+                    working_directory, iBeta, N1, N2, N3, N4,
+                    bc_code, matr_dim, thread_id, prev_config_number + t + 1);
+
+            ifstream measured_data(file_name_measured_data, ios::in | ios::binary);
+
+            for (int i = 0; i < N_loops; i++) {
+                for (int j = 0; j < N_loops; j++) {
+                    measured_data.read((char *) &W[thread_id][i][j][t], sizeof(double));
+                }
+            }
+            measured_data.read((char *) &s[thread_id][t], sizeof(double));
+            measured_data.close();
+        }
     }
 
 
@@ -633,23 +659,34 @@ void MeasureCreutzRatioForBeta(unsigned int key, int iBeta) {
 
 
 
-void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int key,
-            int iBeta, int thread_id, double *s, double ***W) {
+void CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction (unsigned int key,
+            int iBeta, int thread_id, int prev_config_number) {
     float beta = 0.01*iBeta;
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
-    char file_name[500];
-    sprintf(file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
-                                    bc_code, matr_dim, key, iBeta, thread_id);
-    ofstream out_loc(file_name, ios::out | ios::app);
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory, N1, N2, N3, N4,
+            bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+    double *s = new double[int(T_measurement/tau) + 1];
+
+    double ***W = new double**[4];
+    for (int i_direction = 0; i_direction < 4; i_direction++) {
+        W[i_direction] = new double*[4];
+        for (int j_direction = 0; j_direction < 4; j_direction++) {
+            W[i_direction][j_direction] = new double[int(T_measurement/tau) + 1];
+        }
+    }
+
 
 
     for (int t = 0; t < int(T_measurement/tau); t++) {
         char file_name_in[500];
 
         sprintf(file_name_in, system_configuration_file_format, working_directory,
-                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ifstream in_sys(file_name_in, ios::in | ios::binary);
         in_sys >> System;
@@ -660,7 +697,7 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
         char file_name_out_measured[500];
 
         sprintf(file_name_out_measured, system_single_measurement_file_format,
-                working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, t);
+                working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
         ofstream out_measured(file_name_out_measured, ios::out | ios::binary);
 
@@ -692,18 +729,44 @@ void MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction (unsigned int
         out_loc << beta << ',' << t << ',' << s[t]
                     << '\n';
         out_loc.close();
-        out_loc.open(file_name, ios::out | ios::app);
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
     }
 
     out_loc.close();
+
+    delete [] s;
+
+    for (int i_direction = 0; i_direction < 4; i_direction++) {
+        for (int j_direction = 0; j_direction < 4; j_direction++) {
+            delete [] W[i_direction][j_direction];
+        }
+        delete [] W[i_direction];
+    }
+    delete [] W;
+}
+
+
+void CollectData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, int prev_config_number) {
+
+    thread thread_array[threads_per_beta];
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        thread_array[thread_id] =
+                thread(CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction, key,
+                       iBeta, thread_id, prev_config_number);
+    }
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        thread_array[thread_id].join();
+    }
 }
 
 
 
 
 
-void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
-    float beta = 0.01*iBeta;
+void ProcessData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, int prev_config_number) {
+    float beta = 0.01 * iBeta;
 
 
     char output_file_name[500];
@@ -712,36 +775,45 @@ void MeasureAverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta) {
     ofstream out(output_file_name, ios::out | ios::app);
 
 
-
-    double **s = new double*[threads_per_beta];
+    double **s = new double *[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        s[thread_id] = new double[int(T_measurement/tau) + 1];
+        s[thread_id] = new double[int(T_measurement / tau) + 1];
     }
 
-    double ****W = new double***[threads_per_beta];
+    double ****W = new double ***[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        W[thread_id] = new double**[4];
+        W[thread_id] = new double **[4];
         for (int i_direction = 0; i_direction < 4; i_direction++) {
-            W[thread_id][i_direction] = new double*[4];
+            W[thread_id][i_direction] = new double *[4];
             for (int j_direction = 0; j_direction < 4; j_direction++) {
                 W[thread_id][i_direction][j_direction]
-                                    = new double[int(T_measurement/tau) + 1];
+                        = new double[int(T_measurement / tau) + 1];
             }
         }
     }
 
-
-
-    thread thread_array[threads_per_beta];
-
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        thread_array[thread_id] =
-            thread(MeasureAverageOrientedWilsonLoopForBeta_ReadingThreadFunction, key,
-                iBeta, thread_id, s[thread_id], W[thread_id]);
-    }
+        for (int t = 0; t < int(T_measurement/tau); t++) {
+            char file_name_measured_data[500];
+            sprintf(file_name_measured_data, system_single_measurement_file_format,
+                    working_directory, iBeta, N1, N2, N3, N4, bc_code,
+                    matr_dim, thread_id, prev_config_number + t + 1);
+            ifstream measured_data(file_name_measured_data, ios::in | ios::binary);
 
-    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
-        thread_array[thread_id].join();
+
+            for (int i_direction = 0; i_direction <= 3; i_direction++) {
+                for (int j_direction = 0; j_direction <= 3; j_direction++) {
+                    if (i_direction == j_direction) {
+                        continue;
+                    }
+
+                    measured_data.read((char *) &W[thread_id][i_direction][j_direction][t],
+                                       sizeof(double));
+                }
+            }
+            measured_data.read((char *) &s[thread_id][t], sizeof(double));
+            measured_data.close();
+        }
     }
 
 
@@ -1116,7 +1188,6 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
 
 
 void CollectData_ScalarGlueballForBeta_v1(unsigned int key, int iBeta, int prev_config_number) {
-
     thread thread_array[threads_per_beta];
 
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
@@ -1524,7 +1595,7 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
                 working_directory, iBeta, N1, N2, N3, N4,
                 bc_code, matr_dim, thread_id, prev_config_number + t + 1);
 
-        ofstream out_mes(file_name_out_measured, ios::out | ios::binary);
+        ofstream out_measured(file_name_out_measured, ios::out | ios::binary);
 
 
 
@@ -1558,11 +1629,11 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
 
         for (int timeslice = 0; timeslice < N4; timeslice ++) {
             timeslice_observable[timeslice][t] /= level_II_number_of_measurements;
-            out_mes.write((const char *) &timeslice_observable[timeslice][t],
-                            sizeof(double));
+            out_measured.write((const char *) &timeslice_observable[timeslice][t],
+                               sizeof(double));
         }
-        out_mes.write((const char *) &s[t], sizeof(double));
-        out_mes.close();
+        out_measured.write((const char *) &s[t], sizeof(double));
+        out_measured.close();
 
 
 
@@ -1976,12 +2047,47 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
 
 
 
+void Equilibration(unsigned int key) {
+    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
+    mt19937 seed_gen(key);
+
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id] = thread(EquilibrateForBeta_ThreadFunction,
+                                                         key, iBeta_low + t * iBeta_step, seed_gen(),
+                                                         thread_for_beta_id);
+        }
+    }
+
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id].join();
+        }
+    }
+}
+
+void CreateMeasurementConfigurations(unsigned int key, int prev_config_number) {
+    thread beta_threads[(iBeta_high - iBeta_low) / iBeta_step + 1][threads_per_beta];
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id] = thread(AdditionalConfigurationsForBeta_ThreadFunction,
+                                                         key, iBeta_low + t * iBeta_step, thread_for_beta_id,
+                                                         prev_config_number);
+        }
+    }
+
+    for (int t = 0; t <= (iBeta_high - iBeta_low) / iBeta_step; t++) {
+        for (int thread_for_beta_id = 0; thread_for_beta_id < threads_per_beta; thread_for_beta_id++) {
+            beta_threads[t][thread_for_beta_id].join();
+        }
+    }
+}
 
 void CollectData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(CollectData_ScalarGlueballForBeta_v2,
+        beta_threads[t] = thread(CollectData_AverageOrientedWilsonLoopForBeta,
                 key, iBeta_low + t*iBeta_step, prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
@@ -1993,8 +2099,8 @@ void ProcessData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(ProcessData_ScalarGlueballForBeta_v2, key, iBeta_low + t*iBeta_step,
-                1, 0.0, 0.0, prev_config_number);
+        beta_threads[t] = thread(ProcessData_AverageOrientedWilsonLoopForBeta, key, iBeta_low + t*iBeta_step,
+                /*1, 0.0, 0.0,*/ prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
@@ -2005,7 +2111,11 @@ void ProcessData(unsigned int key, int prev_config_number) {
 
 
 
-int main() {
+
+//    argv[1] - key
+//    argv[2] - thread_id
+
+int main(int argc, char **argv) {
     chrono::time_point<chrono::system_clock>
                         start_time = chrono::system_clock::now();
 
@@ -2024,6 +2134,36 @@ int main() {
     CollectData(key, 0);
 
     ProcessData(key, 0);
+
+
+
+
+
+
+
+
+//
+//
+//    int thread_id;
+//    unsigned int external_key;
+//    sscanf(argv[1], "%u", &external_key);
+//    sscanf(argv[2], "%d", &thread_id);
+//
+//    mt19937 rand_gen(key);
+//    for (int i = 0; i < thread_id; i++) {
+//        rand_gen();
+//    }
+//
+//    EquilibrateForBeta_ThreadFunction(external_key, iBeta_low, rand_gen(), thread_id);
+//
+//    AdditionalConfigurationsForBeta_ThreadFunction(external_key, iBeta_low, thread_id, 0);
+//
+//    CollectData_ScalarGlueballForBeta_ThreadFunction_v2(external_key, iBeta_low, thread_id, 0);
+//
+//
+//
+
+
 
 
 
