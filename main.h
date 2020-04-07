@@ -26,7 +26,7 @@ const float level_II_tau = 5.0;
 const int level_II_multihit_number = 8;
 const int level_II_number_of_measurements = 200;
 
-const int loop_number_of_measurements = 8;
+//const int loop_number_of_measurements = 8;
 
 const int iBeta_low = 570;
 const int iBeta_step = 50;

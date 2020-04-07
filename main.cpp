@@ -103,7 +103,7 @@ void PreEquilibration(unsigned int key) {
 
 
 void EquilibrateForBeta_ThreadFunction(unsigned int key, int iBeta, int seed, int thread_id) {
-    float beta = 0.01 * iBeta;
+    auto beta = float(0.01 * iBeta);
     float g0 = sqrt(2 * (matr_dim) / beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -267,7 +267,7 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
 
 
 
-    double **s_timecorr_normed = new double*[int(T_measurement/3/tau) + 1];
+    auto **s_timecorr_normed = new double*[int(T_measurement/3/tau) + 1];
     for (int t = 0; t < int(T_measurement/3/tau) + 1; t++) {
         s_timecorr_normed[t] = new double[threads_per_beta];
     }
@@ -284,7 +284,7 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
             for (int _tau = 0; _tau < int(T_measurement/tau) - t; _tau++) {
                 s_timecorr_normed[t][thread_id] += (s[thread_id][_tau] - s_av)*(s[thread_id][_tau + t] - s_av);
             }
-            s_timecorr_normed[t][thread_id] /= T_measurement/tau - t;
+            s_timecorr_normed[t][thread_id] /= T_measurement/tau - float(t);
             s_timecorr_normed[t][thread_id] /= s_av*s_av;
         }
 
@@ -347,7 +347,7 @@ void ActionAutocorrelation(double &s_av, double &s_d, double &tau_corr_av, doubl
 
 void CollectData_CreutzRatioForBeta_ThreadFunction (unsigned int key,
                                                       int iBeta, int thread_id, int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01 * iBeta);
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -357,9 +357,9 @@ void CollectData_CreutzRatioForBeta_ThreadFunction (unsigned int key,
     ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
-    double *s = new double[int(T_measurement/tau) + 1];
+    auto *s = new double[int(T_measurement/tau) + 1];
 
-    double ***W = new double**[N_loops];
+    auto ***W = new double**[N_loops];
     for (int i = 0; i < N_loops; i++) {
         W[i] = new double*[N_loops];
         for (int j = 0; j < N_loops; j++) {
@@ -452,7 +452,7 @@ void CollectData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
 
 
 void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01 * iBeta);
 
 
     char output_file_name[500];
@@ -462,12 +462,12 @@ void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
 
 
 
-    double **s = new double*[threads_per_beta];
+    auto **s = new double*[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ****W = new double***[threads_per_beta];
+    auto ****W = new double***[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         W[thread_id] = new double**[N_loops];
         for (int i = 0; i < N_loops; i++) {
@@ -662,7 +662,7 @@ void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
 
 void CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction (unsigned int key,
             int iBeta, int thread_id, int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01 * iBeta);
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -671,9 +671,9 @@ void CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction (unsigned int k
             bc_code, matr_dim, key, iBeta, thread_id);
     ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
-    double *s = new double[int(T_measurement/tau) + 1];
+    auto *s = new double[int(T_measurement/tau) + 1];
 
-    double ***W = new double**[4];
+    auto ***W = new double**[4];
     for (int i_direction = 0; i_direction < 4; i_direction++) {
         W[i_direction] = new double*[4];
         for (int j_direction = 0; j_direction < 4; j_direction++) {
@@ -767,7 +767,7 @@ void CollectData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, i
 
 
 void ProcessData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, int prev_config_number) {
-    float beta = 0.01 * iBeta;
+    auto beta = float(0.01 * iBeta);
 
 
     char output_file_name[500];
@@ -776,12 +776,12 @@ void ProcessData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, i
     ofstream out(output_file_name, ios::out | ios::app);
 
 
-    double **s = new double *[threads_per_beta];
+    auto **s = new double *[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         s[thread_id] = new double[int(T_measurement / tau) + 1];
     }
 
-    double ****W = new double ***[threads_per_beta];
+    auto ****W = new double ***[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         W[thread_id] = new double **[4];
         for (int i_direction = 0; i_direction < 4; i_direction++) {
@@ -935,7 +935,7 @@ void ProcessData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, i
 //  odd layers updates then even layers updates
 void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
             int iBeta, int thread_id, int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float (0.01 * iBeta);
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -945,9 +945,9 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
     ofstream out_loc(out_loc_file_name, ios::out | ios::app);
 
 
-    double *s = new double[int(T_measurement/tau) + 1];
+    auto *s = new double[int(T_measurement/tau) + 1];
 
-    double **timeslice_observable = new double*[N4];
+    auto **timeslice_observable = new double*[N4];
     for (int timeslice = 0; timeslice < N4; timeslice++) {
         timeslice_observable[timeslice] = new double[int(T_measurement / tau) + 1];
     }
@@ -1294,33 +1294,33 @@ void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mod
     }
 
 
-    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
+    auto ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable_corr_product[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
             timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_observable_corr_product_jack = new double*[N4];
+    auto **timeslice_observable_corr_product_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
         timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_observable_jack = new double[threads_per_beta];
-    double **timeslice_observable_corr_normed_jack = new double*[N4];
+    auto *timeslice_observable_jack = new double[threads_per_beta];
+    auto **timeslice_observable_corr_normed_jack = new double*[N4];
     for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
         timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_observable_corr_normed_av = new double[N4];
-    double *timeslice_observable_corr_normed_d = new double[N4];
-    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
+    auto *timeslice_observable_corr_normed_av = new double[N4];
+    auto *timeslice_observable_corr_normed_d = new double[N4];
+    auto ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable_corr_normed_old[thread_id] = new double*[N4];
         for (int timeslice_diff = 0; timeslice_diff < N4; timeslice_diff++) {
             timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_observable_corr_normed_av_old = new double[N4];
-    double *timeslice_observable_corr_normed_d_old = new double[N4];
+    auto *timeslice_observable_corr_normed_av_old = new double[N4];
+    auto *timeslice_observable_corr_normed_d_old = new double[N4];
 
 
     char output_file_name[500];
@@ -1550,7 +1550,7 @@ void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mod
 
 void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
             int iBeta, int thread_id, int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01 * iBeta);
     float g0 = sqrt(2*(matr_dim)/beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -1562,9 +1562,9 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
 
 
 
-    double *s = new double[int(T_measurement/tau) + 1];
+    auto *s = new double[int(T_measurement/tau) + 1];
 
-    double **timeslice_observable = new double*[N4];
+    auto **timeslice_observable = new double*[N4];
     for (int timeslice = 0; timeslice < N4; timeslice++) {
         timeslice_observable[timeslice] = new double[int(T_measurement / tau) + 1];
     }
@@ -1779,33 +1779,33 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
 
 
 
-    double ***timeslice_observable_corr_product = new double**[threads_per_beta];
+    auto ***timeslice_observable_corr_product = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable_corr_product[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
             timeslice_observable_corr_product[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double **timeslice_observable_corr_product_jack = new double*[N4 / 2 + 1];
+    auto **timeslice_observable_corr_product_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
         timeslice_observable_corr_product_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_observable_jack = new double[threads_per_beta];
-    double **timeslice_observable_corr_normed_jack = new double*[N4 / 2 + 1];
+    auto *timeslice_observable_jack = new double[threads_per_beta];
+    auto **timeslice_observable_corr_normed_jack = new double*[N4 / 2 + 1];
     for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
         timeslice_observable_corr_normed_jack[timeslice_diff] = new double[threads_per_beta];
     }
-    double *timeslice_observable_corr_normed_av = new double[N4 / 2 + 1];
-    double *timeslice_observable_corr_normed_d = new double[N4 / 2 + 1];
-    double ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
+    auto *timeslice_observable_corr_normed_av = new double[N4 / 2 + 1];
+    auto *timeslice_observable_corr_normed_d = new double[N4 / 2 + 1];
+    auto ***timeslice_observable_corr_normed_old = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable_corr_normed_old[thread_id] = new double*[N4 / 2 + 1];
         for (int timeslice_diff = 0; timeslice_diff < N4/2 + 1; timeslice_diff++) {
             timeslice_observable_corr_normed_old[thread_id][timeslice_diff] = new double[int(T_measurement / tau) + 1];
         }
     }
-    double *timeslice_observable_corr_normed_av_old = new double[N4 / 2 + 1];
-    double *timeslice_observable_corr_normed_d_old = new double[N4 / 2 + 1];
+    auto *timeslice_observable_corr_normed_av_old = new double[N4 / 2 + 1];
+    auto *timeslice_observable_corr_normed_d_old = new double[N4 / 2 + 1];
 
 
 

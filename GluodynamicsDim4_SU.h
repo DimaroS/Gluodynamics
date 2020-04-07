@@ -1399,7 +1399,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
                     ::SinglePolyakovLoop(int direction, int i, int j, int k) {
     if (direction < 0 || direction > 3) {
-        throw(PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS());
+        throw invalid_argument("PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS");
     }
 
 

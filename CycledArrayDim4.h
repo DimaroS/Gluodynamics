@@ -17,7 +17,7 @@ class CycledArrayDim1
     private:
         int arr_size;
     public:
-        CycledArrayDim1(int s);
+        explicit CycledArrayDim1(int s);
         CycledArrayDim1();
         Node m[MAX_ARR_SIZE];
 
@@ -30,7 +30,7 @@ class CycledArrayDim2
     private:
         int arr_size;
     public:
-        CycledArrayDim2(int s);
+        explicit CycledArrayDim2(int s);
         CycledArrayDim2();
         CycledArrayDim1<Node> m[MAX_ARR_SIZE];
 
@@ -43,7 +43,7 @@ class CycledArrayDim3
     private:
         int arr_size;
     public:
-        CycledArrayDim3(int s);
+        explicit CycledArrayDim3(int s);
         CycledArrayDim3();
         CycledArrayDim2<Node> m[MAX_ARR_SIZE];
 
@@ -58,7 +58,7 @@ class CycledArrayDim4
     private:
         int arr_size;
     public:
-        CycledArrayDim4(int s);
+        explicit CycledArrayDim4(int s);
         CycledArrayDim4();
         CycledArrayDim3<Node> m[MAX_ARR_SIZE];
 
@@ -76,9 +76,7 @@ class CycledArrayDim4
 template <typename Node>
 CycledArrayDim1<Node>::CycledArrayDim1()
 :arr_size(0)
-{
-    return;
-}
+{ }
 
 template <typename Node>
 CycledArrayDim1<Node>::CycledArrayDim1(int s)
@@ -102,9 +100,7 @@ Node& CycledArrayDim1<Node>::operator[] (int k) {
 template <typename Node>
 CycledArrayDim2<Node>::CycledArrayDim2()
 :arr_size(0)
-{
-    return;
-}
+{ }
 
 template <typename Node>
 CycledArrayDim2<Node>::CycledArrayDim2(int s)
@@ -132,9 +128,7 @@ CycledArrayDim1<Node> &CycledArrayDim2<Node>::operator[] (int k) {
 template <typename Node>
 CycledArrayDim3<Node>::CycledArrayDim3()
 :arr_size(0)
-{
-    return;
-}
+{ }
 
 template <typename Node>
 CycledArrayDim3<Node>::CycledArrayDim3(int s)
@@ -163,9 +157,7 @@ CycledArrayDim2<Node>& CycledArrayDim3<Node>::operator[] (int k) {
 template <typename Node>
 CycledArrayDim4<Node>::CycledArrayDim4()
 :arr_size(0)
-{
-    return;
-}
+{ }
 
 template <typename Node>
 CycledArrayDim4<Node>::CycledArrayDim4(int s)
@@ -216,7 +208,7 @@ class DynamicCycledArrayDim1
     private:
         int arr_size;
     public:
-        DynamicCycledArrayDim1(int N);
+        explicit DynamicCycledArrayDim1(int N);
         DynamicCycledArrayDim1();
         DynamicCycledArrayDim1(const DynamicCycledArrayDim1 &System);
         ~DynamicCycledArrayDim1();
@@ -375,15 +367,15 @@ DynamicCycledArrayDim2<Node>::DynamicCycledArrayDim2
 }
 
 template <typename Node>
-DynamicCycledArrayDim2<Node>::DynamicCycledArrayDim2(int N1, int N2) {
-    if (N1 <= 0 || N2 <= 0) {
+DynamicCycledArrayDim2<Node>::DynamicCycledArrayDim2(int _N1, int _N2) {
+    if (_N1 <= 0 || _N2 <= 0) {
         throw invalid_argument("DynamicCycledArrayDim2_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicCycledArrayDim1<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicCycledArrayDim1<Node>(N2);
+        m[i] = new DynamicCycledArrayDim1<Node>(_N2);
     }
 }
 
@@ -433,15 +425,15 @@ DynamicCycledArrayDim3<Node>::DynamicCycledArrayDim3
 }
 
 template <typename Node>
-DynamicCycledArrayDim3<Node>::DynamicCycledArrayDim3(int N1, int N2, int N3) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0) {
+DynamicCycledArrayDim3<Node>::DynamicCycledArrayDim3(int _N1, int _N2, int _N3) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0) {
         throw invalid_argument("DynamicCycledArrayDim3_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicCycledArrayDim2<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicCycledArrayDim2<Node>(N2, N3);
+        m[i] = new DynamicCycledArrayDim2<Node>(_N2, _N3);
     }
 }
 
@@ -492,15 +484,15 @@ DynamicCycledArrayDim4<Node>::DynamicCycledArrayDim4
 }
 
 template <typename Node>
-DynamicCycledArrayDim4<Node>::DynamicCycledArrayDim4(int N1, int N2, int N3, int N4) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0 || N4 <= 0) {
+DynamicCycledArrayDim4<Node>::DynamicCycledArrayDim4(int _N1, int _N2, int _N3, int _N4) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0 || _N4 <= 0) {
         throw invalid_argument("DynamicCycledArrayDim4_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicCycledArrayDim3<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicCycledArrayDim3<Node>(N2, N3, N4);
+        m[i] = new DynamicCycledArrayDim3<Node>(_N2, _N3, _N4);
     }
 }
 
@@ -541,7 +533,7 @@ class DynamicSafeArrayDim1
     private:
         int arr_size;
     public:
-        DynamicSafeArrayDim1(int N);
+        explicit DynamicSafeArrayDim1(int N);
         DynamicSafeArrayDim1();
         DynamicSafeArrayDim1(const DynamicSafeArrayDim1 &System);
         ~DynamicSafeArrayDim1();
@@ -700,15 +692,15 @@ DynamicSafeArrayDim2<Node>::DynamicSafeArrayDim2
 }
 
 template <typename Node>
-DynamicSafeArrayDim2<Node>::DynamicSafeArrayDim2(int N1, int N2) {
-    if (N1 <= 0 || N2 <= 0) {
+DynamicSafeArrayDim2<Node>::DynamicSafeArrayDim2(int _N1, int _N2) {
+    if (_N1 <= 0 || _N2 <= 0) {
         throw invalid_argument("DynamicSafeArrayDim2_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicSafeArrayDim1<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicSafeArrayDim1<Node>(N2);
+        m[i] = new DynamicSafeArrayDim1<Node>(_N2);
     }
 }
 
@@ -756,15 +748,15 @@ DynamicSafeArrayDim3<Node>::DynamicSafeArrayDim3
 }
 
 template <typename Node>
-DynamicSafeArrayDim3<Node>::DynamicSafeArrayDim3(int N1, int N2, int N3) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0) {
+DynamicSafeArrayDim3<Node>::DynamicSafeArrayDim3(int _N1, int _N2, int _N3) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0) {
         throw invalid_argument("DynamicSafeArrayDim3_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicSafeArrayDim2<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicSafeArrayDim2<Node>(N2, N3);
+        m[i] = new DynamicSafeArrayDim2<Node>(_N2, _N3);
     }
 }
 
@@ -813,15 +805,15 @@ DynamicSafeArrayDim4<Node>::DynamicSafeArrayDim4
 }
 
 template <typename Node>
-DynamicSafeArrayDim4<Node>::DynamicSafeArrayDim4(int N1, int N2, int N3, int N4) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0 || N4 <= 0) {
+DynamicSafeArrayDim4<Node>::DynamicSafeArrayDim4(int _N1, int _N2, int _N3, int _N4) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0 || _N4 <= 0) {
         throw invalid_argument("DynamicSafeArrayDim4_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicSafeArrayDim3<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicSafeArrayDim3<Node>(N2, N3, N4);
+        m[i] = new DynamicSafeArrayDim3<Node>(_N2, _N3, _N4);
     }
 }
 
@@ -888,7 +880,7 @@ class DynamicUnsafeArrayDim1
     private:
         int arr_size;
     public:
-        DynamicUnsafeArrayDim1(int N);
+        explicit DynamicUnsafeArrayDim1(int N);
         DynamicUnsafeArrayDim1();
         DynamicUnsafeArrayDim1(const DynamicUnsafeArrayDim1 &System);
         ~DynamicUnsafeArrayDim1();
@@ -1046,15 +1038,15 @@ DynamicUnsafeArrayDim2<Node>::DynamicUnsafeArrayDim2
 }
 
 template <typename Node>
-DynamicUnsafeArrayDim2<Node>::DynamicUnsafeArrayDim2(int N1, int N2) {
-    if (N1 <= 0 || N2 <= 0) {
+DynamicUnsafeArrayDim2<Node>::DynamicUnsafeArrayDim2(int _N1, int _N2) {
+    if (_N1 <= 0 || _N2 <= 0) {
         throw invalid_argument("DynamicUnsafeArrayDim2_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicUnsafeArrayDim1<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicUnsafeArrayDim1<Node>(N2);
+        m[i] = new DynamicUnsafeArrayDim1<Node>(_N2);
     }
 }
 
@@ -1104,15 +1096,15 @@ DynamicUnsafeArrayDim3<Node>::DynamicUnsafeArrayDim3
 }
 
 template <typename Node>
-DynamicUnsafeArrayDim3<Node>::DynamicUnsafeArrayDim3(int N1, int N2, int N3) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0) {
+DynamicUnsafeArrayDim3<Node>::DynamicUnsafeArrayDim3(int _N1, int _N2, int _N3) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0) {
         throw invalid_argument("DynamicUnsafeArrayDim3_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicUnsafeArrayDim2<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicUnsafeArrayDim2<Node>(N2, N3);
+        m[i] = new DynamicUnsafeArrayDim2<Node>(_N2, _N3);
     }
 }
 
@@ -1163,15 +1155,15 @@ DynamicUnsafeArrayDim4<Node>::DynamicUnsafeArrayDim4
 }
 
 template <typename Node>
-DynamicUnsafeArrayDim4<Node>::DynamicUnsafeArrayDim4(int N1, int N2, int N3, int N4) {
-    if (N1 <= 0 || N2 <= 0 || N3 <= 0 || N4 <= 0) {
+DynamicUnsafeArrayDim4<Node>::DynamicUnsafeArrayDim4(int _N1, int _N2, int _N3, int _N4) {
+    if (_N1 <= 0 || _N2 <= 0 || _N3 <= 0 || _N4 <= 0) {
         throw invalid_argument("DynamicUnsafeArrayDim4_InitError_UNSUPPORTEDSIZE");
     }
 
-    arr_size = N1;
+    arr_size = _N1;
     m = new DynamicUnsafeArrayDim3<Node>*[arr_size];
     for (int i = 0; i < arr_size; i++) {
-        m[i] = new DynamicUnsafeArrayDim3<Node>(N2, N3, N4);
+        m[i] = new DynamicUnsafeArrayDim3<Node>(_N2, _N3, _N4);
     }
 }
 
@@ -1243,7 +1235,7 @@ class DynamicCycledArray
         int arr_size;
     public:
         DynamicCycledArray();
-        DynamicCycledArray(int Size);
+        explicit DynamicCycledArray(int Size);
         DynamicCycledArray(const DynamicCycledArray<Node, Dimension> &System);
         ~DynamicCycledArray();
 
@@ -1316,7 +1308,7 @@ class DynamicCycledArray<Node, 1>
         int arr_size;
     public:
         DynamicCycledArray();
-        DynamicCycledArray(int Size);
+        explicit DynamicCycledArray(int Size);
         DynamicCycledArray(const DynamicCycledArray<Node, 1> &System);
         ~DynamicCycledArray();
 
