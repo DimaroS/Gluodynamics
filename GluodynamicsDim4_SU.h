@@ -5,16 +5,12 @@
 #include <cmath>
 #include <cstdlib>
 #include <utility>
+#include <exception>
 
 using namespace std;
 
 
 
-class LinkNodeDim4_DimentionError {
-    public:
-        int ret_dim;
-        LinkNodeDim4_DimentionError(int k) {ret_dim = k;}
-};
 
 
 
@@ -25,10 +21,10 @@ class LinkNodeDim4
     private:
         Link m[4];
     public:
-        LinkNodeDim4() {}
+        LinkNodeDim4() = default;
         Link &up(int k) {
             if (k < 0 || k > 3) {
-                throw(LinkNodeDim4_DimentionError(k));
+                throw invalid_argument("LinkNodeDim4_DimentionError");
             }
 
             return m[k];
@@ -63,7 +59,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 class PeriodicGluodynamicsDim4_SU_Base
 {
     public:
-        PeriodicGluodynamicsDim4_SU_Base() {}
+        PeriodicGluodynamicsDim4_SU_Base() = default;
         PeriodicGluodynamicsDim4_SU_Base(int _N1, int _N2, int _N3, int _N4,
                                 int mode, float g0_input, unsigned int seed);
 
@@ -284,13 +280,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 
 
 
-class PeriodicGluodynamicsDim4_SU_Base_InitError_ZeroG0Constant {
-    public:
-        float ret_g0;
-        PeriodicGluodynamicsDim4_SU_Base_InitError_ZeroG0Constant(float f) {
-            ret_g0 = f;
-        }
-};
+
 
 
 
@@ -310,7 +300,7 @@ PeriodicGluodynamicsDim4_SU_Base<MatrixSU, DynamicArray, Float, PrngClass>
     g0 = g0_input;
     action_measured = false;
     if (g0 == 0) {
-        throw(PeriodicGluodynamicsDim4_SU_Base_InitError_ZeroG0Constant(g0));
+        throw invalid_argument("PeriodicGluodynamicsDim4_SU_Base_InitError_ZeroG0Constant");
         return;
     }
     beta = MatrixSU<Float, PrngClass>().GetRepresentationDimension()*2/g0/g0;
@@ -863,12 +853,7 @@ double PeriodicGluodynamicsDim4_SU_Base
 
 
 
-class PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS
-{
-    public:
-        PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS() {}
-        int k = 0;
-};
+
 
 
 
@@ -882,7 +867,7 @@ double PeriodicGluodynamicsDim4_SU_Base
     if (I <= 0 || J <= 0 || i_direction < 0
                 || j_direction < 0 || i_direction > 3 || j_direction > 3
                 || i_direction == j_direction) {
-        throw(PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS());
+        throw invalid_argument("PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS");
     }
 
 
@@ -906,12 +891,7 @@ double PeriodicGluodynamicsDim4_SU_Base
 
 
 
-class PeriodicSingleWilsonLoop_WRONGPARAMETERS
-{
-    public:
-        PeriodicSingleWilsonLoop_WRONGPARAMETERS() {}
-        int k = 0;
-};
+
 
 
 template <template <typename _Float, class _PrngClass> class MatrixSU,
@@ -924,7 +904,7 @@ double PeriodicGluodynamicsDim4_SU_Base
     if (I <= 0 || J <= 0 || i_direction < 0
             || j_direction < 0 || i_direction > 3 || j_direction > 3
             || i_direction == j_direction) {
-        throw(PeriodicSingleWilsonLoop_WRONGPARAMETERS());
+        throw invalid_argument("PeriodicSingleWilsonLoop_WRONGPARAMETERS");
     }
 
     double loop = 0.0;
@@ -1319,12 +1299,7 @@ PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
 
 
 
-class PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS
-{
-    public:
-        PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS() {}
-        int k = 0;
-};
+
 
 
 
@@ -1334,7 +1309,7 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
                         ::AverageOrientedPolyakovLoop(int direction) {
     if (direction < 0 || direction > 3) {
-        throw(PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS());
+        throw invalid_argument("PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS");
     }
 
 

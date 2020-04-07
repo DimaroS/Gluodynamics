@@ -2,6 +2,7 @@
 #include <chrono>
 #include <random>
 #include <thread>
+#include <exception>
 
 #include "main.h"
 #include "MatrixSU2.h"
@@ -14,12 +15,12 @@ using namespace std;
 
 
 
-typedef xReflectionGluodynamicsDim4_SU<MatrixSU2, DynamicUnsafeArrayDim4,
+typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
-const int matr_dim = 2;
-const char bc_code = 'x'; //boundary conditions code
+const int matr_dim = 3;
+const char bc_code = 'p'; //boundary conditions code
 const char working_directory[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/xSU2_3338/";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/xSU3_88820_570/";
 const char system_preconfiguration_file_format[500] =
     "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
@@ -40,7 +41,7 @@ const char system_single_measurement_file_format[500] =
 
 void PreEquilibration(unsigned int key) {
     for (int iBeta = iBeta_low; iBeta <= iBeta_high; iBeta += iBeta_step) {
-        float beta = 0.01*iBeta;
+        auto beta = float(0.01*iBeta);
         float g0 = sqrt(2*(matr_dim)/beta);
         Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -160,7 +161,7 @@ void EquilibrateForBeta_ThreadFunction(unsigned int key, int iBeta, int seed, in
 
 
 void AdditionalConfigurationsForBeta_ThreadFunction(unsigned int key, int iBeta, int thread_id, int prev_config_number) {
-    float beta = 0.01 * iBeta;
+    auto beta = float(0.01 * iBeta);
     float g0 = sqrt(2 * (matr_dim) / beta);
     Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
 
@@ -1208,12 +1209,6 @@ void CollectData_ScalarGlueballForBeta_v1(unsigned int key, int iBeta, int prev_
 
 
 
-class ProcessData_ScalarGlueballForBeta_v1_WRONGMODE
-{
-public:
-    ProcessData_ScalarGlueballForBeta_v1_WRONGMODE() {}
-    int k = 0;
-};
 
 //    odd layers updates then even layers updates
 //    mode = 1 for timeslice observable calculation
@@ -1221,20 +1216,19 @@ public:
 
 void ProcessData_ScalarGlueballForBeta_v1(  unsigned int key, int iBeta, int mode,
                                             double timeslice_observable_av, double timeslice_observable_d) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01*iBeta);
 
     if (mode != 1 && mode != 2) {
-        throw(ProcessData_ScalarGlueballForBeta_v1_WRONGMODE());
-
+        throw invalid_argument("ProcessData_ScalarGlueballForBeta_v1_WRONGMODE");
     }
 
 
-    double **s = new double*[threads_per_beta];
+    auto **s = new double*[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_observable = new double**[threads_per_beta];
+    auto ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
@@ -1683,12 +1677,6 @@ void CollectData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int prev_
 
 
 
-class ProcessData_ScalarGlueballForBeta_v2_WRONGMODE
-{
-public:
-    ProcessData_ScalarGlueballForBeta_v2_WRONGMODE() {}
-    int k = 0;
-};
 
 //    half-spaces updates
 //    mode = 1 for timeslice observable calculation
@@ -1697,10 +1685,10 @@ public:
 void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
                                     double timeslice_observable_av, double timeslice_observable_d,
                                     int prev_config_number) {
-    float beta = 0.01*iBeta;
+    auto beta = float(0.01*iBeta);
 
     if (mode != 1 && mode != 2) {
-        throw(ProcessData_ScalarGlueballForBeta_v2_WRONGMODE());
+        throw invalid_argument("ProcessData_ScalarGlueballForBeta_v2_WRONGMODE");
 
     }
 
@@ -1713,12 +1701,12 @@ void ProcessData_ScalarGlueballForBeta_v2(unsigned int key, int iBeta, int mode,
 
 
 
-    double **s = new double*[threads_per_beta];
+    auto **s = new double*[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         s[thread_id] = new double[int(T_measurement/tau) + 1];
     }
 
-    double ***timeslice_observable = new double**[threads_per_beta];
+    auto ***timeslice_observable = new double**[threads_per_beta];
     for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
         timeslice_observable[thread_id] = new double*[N4];
         for (int timeslice = 0; timeslice < N4; timeslice++) {
@@ -2099,8 +2087,8 @@ void ProcessData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(ProcessData_AverageOrientedWilsonLoopForBeta, key, iBeta_low + t*iBeta_step,
-                /*1, 0.0, 0.0,*/ prev_config_number);
+        beta_threads[t] = thread(ProcessData_ScalarGlueballForBeta_v2, key, iBeta_low + t*iBeta_step,
+                1, 0.0, 0.0, prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
@@ -2125,14 +2113,14 @@ int main(int argc, char **argv) {
 
 
 
-    PreEquilibration(key);
-
-    Equilibration(key);
-
-    CreateMeasurementConfigurations(key, 0);
-
-    CollectData(key, 0);
-
+//    PreEquilibration(key);
+//
+//    Equilibration(key);
+//
+//    CreateMeasurementConfigurations(key, 0);
+//
+//    CollectData(key, 0);
+//
     ProcessData(key, 0);
 
 
@@ -2159,9 +2147,9 @@ int main(int argc, char **argv) {
 //    AdditionalConfigurationsForBeta_ThreadFunction(external_key, iBeta_low, thread_id, 0);
 //
 //    CollectData_ScalarGlueballForBeta_ThreadFunction_v2(external_key, iBeta_low, thread_id, 0);
-//
-//
-//
+
+
+
 
 
 

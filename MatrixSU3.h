@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cmath>
 #include <fstream>
+#include <exception>
+#include <string>
 
 
 #include "main.h"
@@ -73,20 +75,7 @@ class MatrixSU3
 
 
 
-class MatrixSU3_InitError_WrongMode
-{
-    public:
-        MatrixSU3_InitError_WrongMode(int mode);
-        int ret_mode;
-};
 
-
-class MatrixSU3_WrongIndex
-{
-    public:
-        MatrixSU3_WrongIndex() {}
-        int ret_index;
-};
 
 
 
@@ -155,18 +144,16 @@ MatrixSU3<Float, PrngClass>::MatrixSU3(int mode, unsigned int seed)
         return;
     }
 
-    throw(MatrixSU3_InitError_WrongMode(mode));
+    throw invalid_argument("MatrixSU3_InitError_WrongMode: " + to_string(mode));
 }
 
-MatrixSU3_InitError_WrongMode::MatrixSU3_InitError_WrongMode(int Mode) {
-    ret_mode = Mode;
-}
+
 
 
 template <typename Float, class PrngClass>
 Float &MatrixSU3<Float, PrngClass>::GetRe (int k, int m) {
     if (k < 0 || k > 2 || m < 0 || m > 2) {
-        throw(MatrixSU3_WrongIndex());
+        throw invalid_argument("MatrixSU3_WrongIndex");
     }
 
     return re[k][m];
@@ -175,7 +162,7 @@ Float &MatrixSU3<Float, PrngClass>::GetRe (int k, int m) {
 template <typename Float, class PrngClass>
 Float &MatrixSU3<Float, PrngClass>::GetIm (int k, int m) {
     if (k < 0 || k > 2 || m < 0 || m > 2) {
-        throw(MatrixSU3_WrongIndex());
+        throw invalid_argument("MatrixSU3_WrongIndex");
     }
 
     return im[k][m];
@@ -534,12 +521,6 @@ MatrixSU3<Float, PrngClass> MatrixSU3<Float, PrngClass>::UniformlyRandomMatrix
 
 
 
-class MatrixSU3_AroundIdentityMatrix_WRONGEPSILON
-{
-    public:
-        float epsilon;
-        MatrixSU3_AroundIdentityMatrix_WRONGEPSILON() {epsilon = 2.0;}
-};
 
 
 
@@ -547,7 +528,7 @@ template <typename Float, class PrngClass>
 MatrixSU3<Float, PrngClass> MatrixSU3<Float, PrngClass>::AroundIdentityMatrix
                                         (unsigned int _seed, Float epsilon) {
     if (epsilon < 0.0 || epsilon > 1.0) {
-        throw(MatrixSU3_AroundIdentityMatrix_WRONGEPSILON());
+        throw invalid_argument("MatrixSU3_AroundIdentityMatrix_WRONGEPSILON");
     }
 
 //    epsilon = epsilon/2.0;

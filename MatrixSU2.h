@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <fstream>
+#include <exception>
 
 
 #include "main.h"
@@ -73,20 +74,7 @@ class MatrixSU2
 
 
 
-class MatrixSU2_InitError_WrongMode
-{
-    public:
-        MatrixSU2_InitError_WrongMode(int mode);
-        int ret_mode;
 
-};
-
-class MatrixSU2_WrongIndex
-{
-    public:
-        MatrixSU2_WrongIndex(int k);
-        int ret_index;
-};
 
 
 
@@ -168,19 +156,17 @@ MatrixSU2<Float, PrngClass>::MatrixSU2(int mode, unsigned int seed)
         return;
     }
 
-    throw(MatrixSU2_InitError_WrongMode(mode));
+    throw invalid_argument("MatrixSU2_InitError_WrongMode");
 }
 
-MatrixSU2_InitError_WrongMode::MatrixSU2_InitError_WrongMode(int Mode) {
-    ret_mode = Mode;
-}
+
 
 
 
 template <typename Float, class PrngClass>
 Float& MatrixSU2<Float, PrngClass>::operator[] (int k) {
     if (k < 0 || k > 3) {
-        throw(MatrixSU2_WrongIndex(k));
+        throw invalid_argument("MatrixSU2_WrongIndex");
     }
 
     return a[k];
@@ -189,14 +175,10 @@ Float& MatrixSU2<Float, PrngClass>::operator[] (int k) {
 template <typename Float, class PrngClass>
 Float& MatrixSU2<Float, PrngClass>::Get (int k) {
     if (k < 0 || k > 3) {
-        throw(MatrixSU2_WrongIndex(k));
+        throw invalid_argument("MatrixSU2_WrongIndex");
     }
 
     return a[k];
-}
-
-MatrixSU2_WrongIndex::MatrixSU2_WrongIndex(int k) {
-    ret_index = k;
 }
 
 template <typename Float, class PrngClass>
@@ -316,12 +298,7 @@ MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::UniformlyRandomMatrix
 
 
 
-class MatrixSU2_AroundIdentityMatrix_WRONG_EPSILON
-{
-    public:
-        float epsilon;
-        MatrixSU2_AroundIdentityMatrix_WRONG_EPSILON() {}
-};
+
 
 
 
@@ -330,7 +307,7 @@ template <typename Float, class PrngClass>
 MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::AroundIdentityMatrix
                                         (unsigned int _seed, Float epsilon) {
     if (epsilon < 0.0 || epsilon > 1.0) {
-        throw(MatrixSU2_AroundIdentityMatrix_WRONG_EPSILON());
+        throw invalid_argument("MatrixSU2_AroundIdentityMatrix_WRONG_EPSILON");
     }
 
 //    epsilon /= 1.0;
