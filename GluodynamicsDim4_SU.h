@@ -99,6 +99,8 @@ class PeriodicGluodynamicsDim4_SU_Base
                                                             int j_direction);
         double SingleWilsonLoop(int I, int J, int i_direction, int j_direction,
                 int i, int j, int k, int l);
+        double SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
+                            int i, int j, int k, int l);
         double AverageFace();
 
         float Get_g0();
@@ -1118,6 +1120,329 @@ double PeriodicGluodynamicsDim4_SU_Base
             return U.Trace();
     }
 
+    return loop;
+}
+
+
+
+template <template <typename _Float, class _PrngClass> class MatrixSU,
+        template <typename Node> class CycledArrayDim4,
+        typename Float, class PrngClass>
+double PeriodicGluodynamicsDim4_SU_Base
+    <MatrixSU, CycledArrayDim4, Float, PrngClass>
+    ::SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
+                  int i, int j, int k, int l) {
+    if (a_direction == b_direction || a_direction == c_direction
+        || a_direction == d_direction || b_direction == c_direction
+        || b_direction == d_direction || c_direction == d_direction
+        || a_direction < 0 || a_direction > 3
+        || b_direction < 0 || b_direction > 3
+        || c_direction < 0 || c_direction > 3
+        || d_direction < 0 || d_direction > 3) {
+        throw invalid_argument("PeriodicSingleKnot_WRONGPARAMETERS");
+    }
+
+
+
+    const int A = 10;
+    const int B = 100;
+    const int C = 1000;
+    const int D = 10000;
+
+    double loop = 0.0;
+    MatrixSU<Float, PrngClass> U(0);
+    switch (a_direction*A + b_direction*B + c_direction*C + d_direction*D) {
+        case (0 * A + 1 * B + 2 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 3) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+
+        case (0 * A + 1 * B + 3 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j, k+1, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (0 * A + 2 * B + 1 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+        case (0 * A + 2 * B + 3 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (0 * A + 3 * B + 1 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (0 * A + 3 * B + 2 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 0 * B + 2 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 3) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 0 * B + 3 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j, k+1, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 2 * B + 0 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 2 * B + 3 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 3 * B + 0 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (1 * A + 3 * B + 2 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 0 * B + 1 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 0 * B + 3 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 1 * B + 0 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 1 * B + 3 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 3 * B + 0 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 3) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (2 * A + 3 * B + 1 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 3) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 0 * B + 1 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 0 * B + 2 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 0) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 1 * B + 0 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 1 * B + 2 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 2 * B + 0 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j, k+1, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.Trace();
+
+        case (3 * A + 2 * B + 1 * C + 0 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j, k+1, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i, j+1, k, l, 0) *
+                    GetLink(i+1, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 0).Inversed();
+
+            return U.Trace();
+    }
+    
+    throw runtime_error("SingleKnot runtime error");
     return loop;
 }
 
