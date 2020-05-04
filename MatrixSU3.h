@@ -46,14 +46,14 @@ class MatrixSU3
 
 
 
-        Float ReTrace();
-        MatrixSU3 Inversed();
+        Float ReTrace() const;
+        MatrixSU3 Inversed() const;
 
         Float& GetRe (int k, int m);
         Float& GetIm (int k, int m);
         void Set_inacc_step(int k);
-        unsigned int Get_inacc_step();
-        int GetRepresentationDimension();
+        unsigned int Get_inacc_step() const;
+        int GetRepresentationDimension() const;
 
         friend MatrixSU3<Float, PrngClass> operator* <Float, PrngClass>
                 (MatrixSU3<Float, PrngClass> A, MatrixSU3<Float, PrngClass> B);
@@ -121,7 +121,7 @@ MatrixSU3<Float, PrngClass>::MatrixSU3() {
 }
 
 template <typename Float, class PrngClass>
-int MatrixSU3<Float, PrngClass>::GetRepresentationDimension() {
+int MatrixSU3<Float, PrngClass>::GetRepresentationDimension() const {
     return 3;
 }
 
@@ -174,20 +174,20 @@ void MatrixSU3<Float, PrngClass>::Set_inacc_step(int k) {
 }
 
 template <typename Float, class PrngClass>
-unsigned int MatrixSU3<Float, PrngClass>::Get_inacc_step() {
+unsigned int MatrixSU3<Float, PrngClass>::Get_inacc_step() const {
     return inacc_step;
 }
 
 
 template <typename Float, class PrngClass>
-Float MatrixSU3<Float, PrngClass>::ReTrace() {
+Float MatrixSU3<Float, PrngClass>::ReTrace() const {
     return re[0][0] + re[1][1] + re[2][2];
 }
 
 
 
 template <typename Float, class PrngClass>
-MatrixSU3<Float, PrngClass> MatrixSU3<Float, PrngClass>::Inversed() {
+MatrixSU3<Float, PrngClass> MatrixSU3<Float, PrngClass>::Inversed() const {
     MatrixSU3<Float, PrngClass> temp;
     temp.GetRe(0, 0) = re[0][0];
     temp.GetRe(0, 1) = re[1][0];

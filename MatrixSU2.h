@@ -46,14 +46,14 @@ class MatrixSU2
         MatrixSU2 HeatBathMatrix(unsigned int seed, Float beta, MatrixSU2<Float, PrngClass> *A);
 
 
-        Float ReTrace();
-        MatrixSU2 Inversed();
+        Float ReTrace() const;
+        MatrixSU2 Inversed() const;
 
         Float& operator[] (int k);
         Float& Get (int k);
         void Set_inacc_step(int k);
-        unsigned int Get_inacc_step();
-        int GetRepresentationDimension();
+        unsigned int Get_inacc_step() const;
+        int GetRepresentationDimension() const;
 
         friend MatrixSU2<Float, PrngClass> operator* <Float, PrngClass>
                 (MatrixSU2<Float, PrngClass> A, MatrixSU2<Float, PrngClass> B);
@@ -135,7 +135,7 @@ ifstream &operator>> (ifstream &stream, MatrixSU2<Float, PrngClass> &A) {
 
 
 template <typename Float, class PrngClass>
-int MatrixSU2<Float, PrngClass>::GetRepresentationDimension() {
+int MatrixSU2<Float, PrngClass>::GetRepresentationDimension() const {
     return 2;
 }
 
@@ -187,20 +187,20 @@ void MatrixSU2<Float, PrngClass>::Set_inacc_step(int k){
 }
 
 template <typename Float, class PrngClass>
-unsigned int MatrixSU2<Float, PrngClass>::Get_inacc_step() {
+unsigned int MatrixSU2<Float, PrngClass>::Get_inacc_step() const {
     return inacc_step;
 }
 
 
 template <typename Float, class PrngClass>
-Float MatrixSU2<Float, PrngClass>::ReTrace() {
+Float MatrixSU2<Float, PrngClass>::ReTrace() const {
     return 2*a[0];
 }
 
 
 
 template <typename Float, class PrngClass>
-MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::Inversed() {
+MatrixSU2<Float, PrngClass> MatrixSU2<Float, PrngClass>::Inversed() const {
     MatrixSU2<Float, PrngClass> temp;
     temp[0] = a[0];
     temp[1] = -a[1];

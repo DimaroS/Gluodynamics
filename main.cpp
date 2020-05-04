@@ -20,7 +20,7 @@ typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
 const int matr_dim = 3;
 const char bc_code = 'p'; //boundary conditions code
 const char working_directory[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/perSU3_3338_580_pseudo/";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/perSU3_3334_580_pseudo/";
 const char system_preconfiguration_file_format[500] =
     "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
@@ -713,7 +713,7 @@ void CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction (unsigned int k
                 }
 
                 W[i_direction][j_direction][t] = System.AverageOrientedWilsonLoop(1, 1,
-                                                i_direction, j_direction);
+                                                i_direction+1, j_direction+1);
 
                 out_measured.write((const char *) &W[i_direction][j_direction][t],
                                    sizeof(double));
@@ -902,7 +902,7 @@ void ProcessData_AverageOrientedWilsonLoopForBeta(unsigned int key, int iBeta, i
                 continue;
             }
 
-            out << beta << ',' << tau_corr_av*tau << ',' << i_direction << ',' << j_direction
+            out << beta << ',' << tau_corr_av*tau << ',' << i_direction+1 << ',' << j_direction+1
                 << ',' << W_av[i_direction][j_direction] << ',' << W_d[i_direction][j_direction] << '\n';
         }
     }
@@ -984,12 +984,12 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
-//                                            + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 2, i, j, k, timeslice)
 //                                            + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
                         }
                     }
                 }
@@ -1013,12 +1013,12 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
-    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
-    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 2, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+    //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+    //                                        + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
                         }
                     }
                 }
@@ -1042,12 +1042,12 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
 //                    for (int j = 0; j < N2; j++) {
 //                        for (int k = 0; k < N3; k++) {
 //                            timeslice_observable[timeslice][t] +=
-//    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
-//    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 0, 2, i, j, k, timeslice)
 //    //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice);
+//                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+//    //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+//    //                                        + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
 //                        }
 //                    }
 //                }
@@ -1072,12 +1072,12 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
 //                    for (int j = 0; j < N2; j++) {
 //                        for (int k = 0; k < N3; k++) {
 //                            timeslice_observable[timeslice][t] +=
-//    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
-//    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 0, 2, i, j, k, timeslice)
 //    //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-//                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice);
+//                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+//    //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+//    //                                        + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
+//                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
 //                        }
 //                    }
 //                }
@@ -1605,12 +1605,12 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
-    //                                        + System.SingleWilsonLoop(3, 3, 0, 1, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 1, i, j, k, timeslice)
-    //                                        + System.SingleWilsonLoop(3, 3, 0, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 0, 2, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+    //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+    //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
                         }
                     }
                 }
@@ -2105,7 +2105,30 @@ void CollectData_PseudoScalarGlueballForBeta_ThreadFunction (unsigned int key,
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
-                                    System.SingleKnot(0, 1, 2, 3, i, j, k, timeslice);
+                                    +System.SingleKnot(1, 4, 3, -2, i, j, k, timeslice)
+                                    +System.SingleKnot(-3, 4, -1, 2, i, j, k, timeslice)
+                                    +System.SingleKnot(3, 4, 2, -1, i, j, k, timeslice)
+                                    +System.SingleKnot(-2, 4, -3, 1, i, j, k, timeslice)
+                                    +System.SingleKnot(2, 4, 1, -3, i, j, k, timeslice)
+                                    +System.SingleKnot(-1, 4, -2, 3, i, j, k, timeslice)
+                                    +System.SingleKnot(3, 4, -1, -2, i, j, k, timeslice)
+                                    +System.SingleKnot(1, 4, -3, 2, i, j, k, timeslice)
+                                    +System.SingleKnot(2, 4, -3, -1, i, j, k, timeslice)
+                                    +System.SingleKnot(3, 4, -2, 1, i, j, k, timeslice)
+                                    +System.SingleKnot(1, 4, -2, -3, i, j, k, timeslice)
+                                    +System.SingleKnot(2, 4, -1, 3, i, j, k, timeslice)
+                                    +System.SingleKnot(-3, 4, 1, -2, i, j, k, timeslice)
+                                    +System.SingleKnot(-1, 4, 3, 2, i, j, k, timeslice)
+                                    +System.SingleKnot(-2, 4, 3, -1, i, j, k, timeslice)
+                                    +System.SingleKnot(-3, 4, 2, 1, i, j, k, timeslice)
+                                    +System.SingleKnot(-1, 4, 2, -3, i, j, k, timeslice)
+                                    +System.SingleKnot(-2, 4, 1, 3, i, j, k, timeslice)
+                                    +System.SingleKnot(-1, 4, -3, -2, i, j, k, timeslice)
+                                    +System.SingleKnot(3, 4, 1, 2, i, j, k, timeslice)
+                                    +System.SingleKnot(-3, 4, -2, -1, i, j, k, timeslice)
+                                    +System.SingleKnot(2, 4, 3, 1, i, j, k, timeslice)
+                                    +System.SingleKnot(-2, 4, -1, -3, i, j, k, timeslice)
+                                    +System.SingleKnot(1, 4, 2, 3, i, j, k, timeslice);
                         }
                     }
                 }
@@ -2621,14 +2644,14 @@ int main(int argc, char **argv) {
 
 
 
-//    PreEquilibration(key);
-//
-//    Equilibration(key);
-//
-//    CreateMeasurementConfigurations(key, 0);
-//
-//    CollectData(key, 0);
-//
+    PreEquilibration(key);
+
+    Equilibration(key);
+
+    CreateMeasurementConfigurations(key, 0);
+
+    CollectData(key, 0);
+
     ProcessData(key, 0);
 
 

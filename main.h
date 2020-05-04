@@ -6,16 +6,16 @@ using namespace std;
 const int MAX_SIZE_DIM4 = 10;
 
 
-const int N1 = 6;
-const int N2 = 6;
-const int N3 = 6;
-const int N4 = 16; // N4 == 4*(int)
+const int N1 = 3;
+const int N2 = 3;
+const int N3 = 3;
+const int N4 = 4; // N4 == 4*(int)
 const int N_loops = 2;
 const float tau = 200.0;
 const float T_preequilibration = 10*tau;
-const float T_equilibration = 100*tau;
-const float T_measurement = 300*tau;
-const int threads_per_beta = 20;
+const float T_equilibration = 10*tau;
+const float T_measurement = 100*tau;
+const int threads_per_beta = 8;
 const unsigned int multihit_number = 8;
 
 const float level_I_tau = 5.0;
