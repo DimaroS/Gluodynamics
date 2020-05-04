@@ -46,7 +46,7 @@ class MatrixSU2
         MatrixSU2 HeatBathMatrix(unsigned int seed, Float beta, MatrixSU2<Float, PrngClass> *A);
 
 
-        Float Trace();
+        Float ReTrace();
         MatrixSU2 Inversed();
 
         Float& operator[] (int k);
@@ -193,7 +193,7 @@ unsigned int MatrixSU2<Float, PrngClass>::Get_inacc_step() {
 
 
 template <typename Float, class PrngClass>
-Float MatrixSU2<Float, PrngClass>::Trace() {
+Float MatrixSU2<Float, PrngClass>::ReTrace() {
     return 2*a[0];
 }
 

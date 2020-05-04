@@ -6,10 +6,10 @@ using namespace std;
 const int MAX_SIZE_DIM4 = 10;
 
 
-const int N1 = 4;
-const int N2 = 4;
-const int N3 = 4;
-const int N4 = 8; // N4 == 4*(int)
+const int N1 = 6;
+const int N2 = 6;
+const int N3 = 6;
+const int N4 = 16; // N4 == 4*(int)
 const int N_loops = 2;
 const float tau = 200.0;
 const float T_preequilibration = 10*tau;

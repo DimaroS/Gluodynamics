@@ -20,7 +20,7 @@ typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
 const int matr_dim = 3;
 const char bc_code = 'p'; //boundary conditions code
 const char working_directory[500] =
-    "/home/itep/sychev/GluodynamicsDATA/pSU3_88820_595/";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/perSU3_3338_580_pseudo/";
 const char system_preconfiguration_file_format[500] =
     "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
@@ -2459,7 +2459,7 @@ void ProcessData_PseudoScalarGlueballForBeta (unsigned int key, int iBeta, int m
 
 
 
-    out << beta << ',' << s_av << ',' << s_d << ',' << tau_corr_av*tau << '\n';
+    out << beta << ',' << s_av << ',' << s_d << ',' << tau_corr_av << '\n';
     out << beta << ',' << timeslice_observable_av << ',' << timeslice_observable_d
         << ',' << timeslice_observable_d / timeslice_observable_av << '\n';
     out.close();
@@ -2525,49 +2525,6 @@ void ProcessData_PseudoScalarGlueballForBeta (unsigned int key, int iBeta, int m
     }
     delete [] timeslice_observable;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2664,14 +2621,14 @@ int main(int argc, char **argv) {
 
 
 
-    PreEquilibration(key);
-
-    Equilibration(key);
-
-    CreateMeasurementConfigurations(key, 0);
-
-    CollectData(key, 0);
-
+//    PreEquilibration(key);
+//
+//    Equilibration(key);
+//
+//    CreateMeasurementConfigurations(key, 0);
+//
+//    CollectData(key, 0);
+//
     ProcessData(key, 0);
 
 
@@ -2697,7 +2654,8 @@ int main(int argc, char **argv) {
 //
 //    AdditionalConfigurationsForBeta_ThreadFunction(external_key, iBeta_low, thread_id, 0);
 //
-//    CollectData_ScalarGlueballForBeta_ThreadFunction_v2(external_key, iBeta_low, thread_id, 0);
+////    CollectData_ScalarGlueballForBeta_ThreadFunction_v2(external_key, iBeta_low, thread_id, 0);
+//    CollectData_PseudoScalarGlueballForBeta_ThreadFunction(external_key, iBeta_low, thread_id, 0);
 
 
 

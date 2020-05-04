@@ -46,7 +46,7 @@ class MatrixSU3
 
 
 
-        Float Trace();
+        Float ReTrace();
         MatrixSU3 Inversed();
 
         Float& GetRe (int k, int m);
@@ -180,7 +180,7 @@ unsigned int MatrixSU3<Float, PrngClass>::Get_inacc_step() {
 
 
 template <typename Float, class PrngClass>
-Float MatrixSU3<Float, PrngClass>::Trace() {
+Float MatrixSU3<Float, PrngClass>::ReTrace() {
     return re[0][0] + re[1][1] + re[2][2];
 }
 

@@ -22,12 +22,12 @@ class LinkNodeDim4
         Link m[4];
     public:
         LinkNodeDim4() = default;
-        Link &up(int k) {
-            if (k < 0 || k > 3) {
+        Link & up (int k) {
+            if (k < 1 || k > 4) {
                 throw invalid_argument("LinkNodeDim4_DimentionError");
             }
 
-            return m[k];
+            return m[k-1];
         }
 };
 
@@ -56,28 +56,28 @@ class LinkNodeDim4
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class DynamicArray,
                 typename Float, class PrngClass>
-class PeriodicGluodynamicsDim4_SU_Base
+class GluodynamicsWithoutBorderDim4_SU_Base
 {
     public:
-        PeriodicGluodynamicsDim4_SU_Base() = default;
-        PeriodicGluodynamicsDim4_SU_Base(int _N1, int _N2, int _N3, int _N4,
-                                int mode, float g0_input, unsigned int seed);
+        GluodynamicsWithoutBorderDim4_SU_Base() = default;
+        GluodynamicsWithoutBorderDim4_SU_Base(int N1, int N2, int N3, int N4,
+                                              int mode, float g0_input, unsigned int seed);
 
         DynamicArray<LinkNodeDim4<MatrixSU<Float, PrngClass>>> m;
 
         virtual MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
-                                                            int direction) = 0;
-        MatrixSU<Float, PrngClass> *PrecalculatedPlaquettes
-                                        (int i, int j, int k, int l, int d);
+                                                            int direction) const = 0;
+        MatrixSU<Float, PrngClass> * PrecalculatedPlaquettes
+                                        (int i, int j, int k, int l, int direction) const ;
 
 
-        bool MetropolisHit(int i, int j, int k, int l, int d,
+        bool MetropolisHit(int i, int j, int k, int l, int direction,
                                             MatrixSU<Float, PrngClass> *Usim);
         unsigned int SmallMonteCarloStep(unsigned int number_of_hits);
         float MonteCarloStep(float number_of_steps,
                                     unsigned int number_of_hits);
         unsigned int HeatBath_SmallMonteCarloStep
-            (unsigned int number_of_hits, int i, int j, int k, int l, int d);
+            (unsigned int number_of_hits, int i, int j, int k, int l, int direction);
         float HeatBath_MonteCarloStep(float number_of_steps,
                                     unsigned int number_of_hits);
 
@@ -94,18 +94,18 @@ class PeriodicGluodynamicsDim4_SU_Base
         void Base_Output(ofstream &stream) const;
 
         double Action();
-        double AverageWilsonLoop(int I, int J);
+        double AverageWilsonLoop(int I, int J) const;
         double AverageOrientedWilsonLoop(int I, int J, int i_direction,
-                                                            int j_direction);
+                                                            int j_direction) const;
         double SingleWilsonLoop(int I, int J, int i_direction, int j_direction,
-                int i, int j, int k, int l);
+                int i, int j, int k, int l) const;
         double SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
-                            int i, int j, int k, int l);
-        double AverageFace();
+                            int i, int j, int k, int l) const;
+        double AverageFace() const;
 
-        float Get_g0();
-        float Get_beta();
-        float Get_t();
+        float Get_g0() const;
+        float Get_beta() const;
+        float Get_t() const;
         void Set_g0(float g0_new);
         void Set_beta(float beta_new);
         void Set_t(float t_new);
@@ -140,34 +140,34 @@ class PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                                                            ::Get_g0() {
+                                                            ::Get_g0() const {
     return g0;
 }
 
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                                                            ::Get_beta() {
+                                                            ::Get_beta() const {
     return beta;
 }
 
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                                                            ::Get_t() {
+                                                            ::Get_t() const {
     return t;
 }
 
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                                                         ::Set_g0(float g0_new) {
     g0 = g0_new;
@@ -178,7 +178,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                                                     ::Set_beta(float beta_new) {
     beta = beta_new;
@@ -190,7 +190,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                                                     ::Set_t(float t_new) {
     t = t_new;
@@ -199,7 +199,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                                                     ::Seed(unsigned int key) {
     rand_gen.seed(key);
@@ -210,7 +210,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class DynamicArray,
                 typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::
                                         Base_Output (ofstream &stream) const {
     stream.write((const char *) &arr_size_1, sizeof(int));
@@ -240,7 +240,7 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
             template <typename Node> class DynamicArray,
             typename Float, class PrngClass>
-void PeriodicGluodynamicsDim4_SU_Base
+void GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::
                                             Base_Input (ifstream &stream) {
     stream.read((char *) &arr_size_1, sizeof(int));
@@ -289,9 +289,9 @@ void PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class DynamicArray,
                 typename Float, class PrngClass>
-PeriodicGluodynamicsDim4_SU_Base<MatrixSU, DynamicArray, Float, PrngClass>
-            ::PeriodicGluodynamicsDim4_SU_Base (int N1, int N2, int N3, int N4,
-                            int mode, float g0_input, unsigned int _seed)
+GluodynamicsWithoutBorderDim4_SU_Base<MatrixSU, DynamicArray, Float, PrngClass>
+            ::GluodynamicsWithoutBorderDim4_SU_Base (int N1, int N2, int N3, int N4,
+                                                     int mode, float g0_input, unsigned int _seed)
 :   m(N1, N2, N3, N4),
     arr_size_1(N1),
     arr_size_2(N2),
@@ -327,7 +327,7 @@ PeriodicGluodynamicsDim4_SU_Base<MatrixSU, DynamicArray, Float, PrngClass>
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                                                                 ::Action() {
     if (action_measured) {
@@ -340,24 +340,30 @@ double PeriodicGluodynamicsDim4_SU_Base
         for (int j = 0; j < arr_size_2; j++) {
             for (int k = 0; k < arr_size_3; k++) {
                 for (int l = 0; l < arr_size_4; l++) {
-                    sum += (GetLink(i, j, k, l, 0)*GetLink(i+1, j, k, l, 1)*
-                            GetLink(i, j+1, k, l, 0).Inversed()*
-                            GetLink(i, j, k, l, 1).Inversed()).Trace()
-                        + (GetLink(i, j, k, l, 0)*GetLink(i+1, j, k, l, 2)*
-                            GetLink(i, j, k+1, l, 0).Inversed()*
-                            GetLink(i, j, k, l, 2).Inversed()).Trace()
-                        + (GetLink(i, j, k, l, 0)*GetLink(i+1, j, k, l, 3)*
-                            GetLink(i, j, k, l+1, 0).Inversed()*
-                            GetLink(i, j, k, l, 3).Inversed()).Trace()
-                        + (GetLink(i, j, k, l, 1)*GetLink(i, j+1, k, l, 2)*
+                    sum += (GetLink(i, j, k, l, 1)*
+                            GetLink(i+1, j, k, l, 2)*
+                            GetLink(i, j+1, k, l, 1).Inversed()*
+                            GetLink(i, j, k, l, 2).Inversed()).ReTrace()
+                        + (GetLink(i, j, k, l, 1)*
+                            GetLink(i+1, j, k, l, 3)*
                             GetLink(i, j, k+1, l, 1).Inversed()*
-                            GetLink(i, j, k, l, 2).Inversed()).Trace()
-                        + (GetLink(i, j, k, l, 1)*GetLink(i, j+1, k, l, 3)*
+                            GetLink(i, j, k, l, 3).Inversed()).ReTrace()
+                        + (GetLink(i, j, k, l, 1)*
+                            GetLink(i+1, j, k, l, 4)*
                             GetLink(i, j, k, l+1, 1).Inversed()*
-                            GetLink(i, j, k, l, 3).Inversed()).Trace()
-                        + (GetLink(i, j, k, l, 2)*GetLink(i, j, k+1, l, 3)*
+                            GetLink(i, j, k, l, 4).Inversed()).ReTrace()
+                        + (GetLink(i, j, k, l, 2)*
+                            GetLink(i, j+1, k, l, 3)*
+                            GetLink(i, j, k+1, l, 2).Inversed()*
+                            GetLink(i, j, k, l, 3).Inversed()).ReTrace()
+                        + (GetLink(i, j, k, l, 2)*
+                            GetLink(i, j+1, k, l, 4)*
                             GetLink(i, j, k, l+1, 2).Inversed()*
-                            GetLink(i, j, k, l, 3).Inversed()).Trace();
+                            GetLink(i, j, k, l, 4).Inversed()).ReTrace()
+                        + (GetLink(i, j, k, l, 3)*
+                            GetLink(i, j, k+1, l, 4)*
+                            GetLink(i, j, k, l+1, 3).Inversed()*
+                            GetLink(i, j, k, l, 4).Inversed()).ReTrace();
                 }
             }
         }
@@ -379,142 +385,142 @@ double PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-MatrixSU<Float, PrngClass> * PeriodicGluodynamicsDim4_SU_Base
+MatrixSU<Float, PrngClass> * GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-            ::PrecalculatedPlaquettes(int i, int j, int k, int l, int d) {
+            ::PrecalculatedPlaquettes(int i, int j, int k, int l, int direction) const {
     MatrixSU<Float, PrngClass> *Usim;
     Usim = new MatrixSU<Float, PrngClass>[6];
     for (int i = 0; i < 6; i++) {
         Usim[i] = MatrixSU<Float, PrngClass>(0);
     }
 
-    switch (d) {
-        case 0:
-            Usim[0] *= GetLink(i, j, k, l, 0);
-            Usim[0] *= GetLink(i+1, j, k, l, 1);
-            Usim[0] *= GetLink(i, j+1, k, l, 0).Inversed();
-            Usim[0] *= GetLink(i, j, k, l, 1).Inversed();
-
-            Usim[1] *= GetLink(i, j, k, l, 0);
-            Usim[1] *= GetLink(i+1, j-1, k, l, 1).Inversed();
-            Usim[1] *= GetLink(i, j-1, k, l, 0).Inversed();
-            Usim[1] *= GetLink(i, j-1, k, l, 1);
-
-            Usim[2] *= GetLink(i, j, k, l, 0);
-            Usim[2] *= GetLink(i+1, j, k, l, 2);
-            Usim[2] *= GetLink(i, j, k+1, l, 0).Inversed();
-            Usim[2] *= GetLink(i, j, k, l, 2).Inversed();
-
-            Usim[3] *= GetLink(i, j, k, l, 0);
-            Usim[3] *= GetLink(i+1, j, k-1, l, 2).Inversed();
-            Usim[3] *= GetLink(i, j, k-1, l, 0).Inversed();
-            Usim[3] *= GetLink(i, j, k-1, l, 2);
-
-            Usim[4] *= GetLink(i, j, k, l, 0);
-            Usim[4] *= GetLink(i+1, j, k, l, 3);
-            Usim[4] *= GetLink(i, j, k, l+1, 0).Inversed();
-            Usim[4] *= GetLink(i, j, k, l, 3).Inversed();
-
-            Usim[5] *= GetLink(i, j, k, l, 0);
-            Usim[5] *= GetLink(i+1, j, k, l-1, 3).Inversed();
-            Usim[5] *= GetLink(i, j, k, l-1, 0).Inversed();
-            Usim[5] *= GetLink(i, j, k, l-1, 3);
-
-            break;
+    switch (direction) {
         case 1:
             Usim[0] *= GetLink(i, j, k, l, 1);
-            Usim[0] *= GetLink(i, j+1, k, l, 0);
-            Usim[0] *= GetLink(i+1, j, k, l, 1).Inversed();
-            Usim[0] *= GetLink(i, j, k, l, 0).Inversed();
+            Usim[0] *= GetLink(i+1, j, k, l, 2);
+            Usim[0] *= GetLink(i, j+1, k, l, 1).Inversed();
+            Usim[0] *= GetLink(i, j, k, l, 2).Inversed();
 
             Usim[1] *= GetLink(i, j, k, l, 1);
-            Usim[1] *= GetLink(i-1, j+1, k, l, 0).Inversed();
-            Usim[1] *= GetLink(i-1, j, k, l, 1).Inversed();
-            Usim[1] *= GetLink(i-1, j, k, l, 0);
+            Usim[1] *= GetLink(i+1, j-1, k, l, 2).Inversed();
+            Usim[1] *= GetLink(i, j-1, k, l, 1).Inversed();
+            Usim[1] *= GetLink(i, j-1, k, l, 2);
 
             Usim[2] *= GetLink(i, j, k, l, 1);
-            Usim[2] *= GetLink(i, j+1, k, l, 2);
+            Usim[2] *= GetLink(i+1, j, k, l, 3);
             Usim[2] *= GetLink(i, j, k+1, l, 1).Inversed();
-            Usim[2] *= GetLink(i, j, k, l, 2).Inversed();
+            Usim[2] *= GetLink(i, j, k, l, 3).Inversed();
 
             Usim[3] *= GetLink(i, j, k, l, 1);
-            Usim[3] *= GetLink(i, j+1, k-1, l, 2).Inversed();
+            Usim[3] *= GetLink(i+1, j, k-1, l, 3).Inversed();
             Usim[3] *= GetLink(i, j, k-1, l, 1).Inversed();
-            Usim[3] *= GetLink(i, j, k-1, l, 2);
+            Usim[3] *= GetLink(i, j, k-1, l, 3);
 
             Usim[4] *= GetLink(i, j, k, l, 1);
-            Usim[4] *= GetLink(i, j+1, k, l, 3);
+            Usim[4] *= GetLink(i+1, j, k, l, 4);
             Usim[4] *= GetLink(i, j, k, l+1, 1).Inversed();
-            Usim[4] *= GetLink(i, j, k, l, 3).Inversed();
+            Usim[4] *= GetLink(i, j, k, l, 4).Inversed();
 
             Usim[5] *= GetLink(i, j, k, l, 1);
-            Usim[5] *= GetLink(i, j+1, k, l-1, 3).Inversed();
+            Usim[5] *= GetLink(i+1, j, k, l-1, 4).Inversed();
             Usim[5] *= GetLink(i, j, k, l-1, 1).Inversed();
-            Usim[5] *= GetLink(i, j, k, l-1, 3);
+            Usim[5] *= GetLink(i, j, k, l-1, 4);
 
             break;
         case 2:
             Usim[0] *= GetLink(i, j, k, l, 2);
-            Usim[0] *= GetLink(i, j, k+1, l, 0);
+            Usim[0] *= GetLink(i, j+1, k, l, 1);
             Usim[0] *= GetLink(i+1, j, k, l, 2).Inversed();
-            Usim[0] *= GetLink(i, j, k, l, 0).Inversed();
+            Usim[0] *= GetLink(i, j, k, l, 1).Inversed();
 
             Usim[1] *= GetLink(i, j, k, l, 2);
-            Usim[1] *= GetLink(i-1, j, k+1, l, 0).Inversed();
+            Usim[1] *= GetLink(i-1, j+1, k, l, 1).Inversed();
             Usim[1] *= GetLink(i-1, j, k, l, 2).Inversed();
-            Usim[1] *= GetLink(i-1, j, k, l, 0);
+            Usim[1] *= GetLink(i-1, j, k, l, 1);
 
             Usim[2] *= GetLink(i, j, k, l, 2);
-            Usim[2] *= GetLink(i, j, k+1, l, 1);
-            Usim[2] *= GetLink(i, j+1, k, l, 2).Inversed();
-            Usim[2] *= GetLink(i, j, k, l, 1).Inversed();
+            Usim[2] *= GetLink(i, j+1, k, l, 3);
+            Usim[2] *= GetLink(i, j, k+1, l, 2).Inversed();
+            Usim[2] *= GetLink(i, j, k, l, 3).Inversed();
 
             Usim[3] *= GetLink(i, j, k, l, 2);
-            Usim[3] *= GetLink(i, j-1, k+1, l, 1).Inversed();
-            Usim[3] *= GetLink(i, j-1, k, l, 2).Inversed();
-            Usim[3] *= GetLink(i, j-1, k, l, 1);
+            Usim[3] *= GetLink(i, j+1, k-1, l, 3).Inversed();
+            Usim[3] *= GetLink(i, j, k-1, l, 2).Inversed();
+            Usim[3] *= GetLink(i, j, k-1, l, 3);
 
             Usim[4] *= GetLink(i, j, k, l, 2);
-            Usim[4] *= GetLink(i, j, k+1, l, 3);
+            Usim[4] *= GetLink(i, j+1, k, l, 4);
             Usim[4] *= GetLink(i, j, k, l+1, 2).Inversed();
-            Usim[4] *= GetLink(i, j, k, l, 3).Inversed();
+            Usim[4] *= GetLink(i, j, k, l, 4).Inversed();
 
             Usim[5] *= GetLink(i, j, k, l, 2);
-            Usim[5] *= GetLink(i, j, k+1, l-1, 3).Inversed();
+            Usim[5] *= GetLink(i, j+1, k, l-1, 4).Inversed();
             Usim[5] *= GetLink(i, j, k, l-1, 2).Inversed();
-            Usim[5] *= GetLink(i, j, k, l-1, 3);
+            Usim[5] *= GetLink(i, j, k, l-1, 4);
 
             break;
         case 3:
             Usim[0] *= GetLink(i, j, k, l, 3);
-            Usim[0] *= GetLink(i, j, k, l+1, 0);
+            Usim[0] *= GetLink(i, j, k+1, l, 1);
             Usim[0] *= GetLink(i+1, j, k, l, 3).Inversed();
-            Usim[0] *= GetLink(i, j, k, l, 0).Inversed();
+            Usim[0] *= GetLink(i, j, k, l, 1).Inversed();
 
             Usim[1] *= GetLink(i, j, k, l, 3);
-            Usim[1] *= GetLink(i-1, j, k, l+1, 0).Inversed();
+            Usim[1] *= GetLink(i-1, j, k+1, l, 1).Inversed();
             Usim[1] *= GetLink(i-1, j, k, l, 3).Inversed();
-            Usim[1] *= GetLink(i-1, j, k, l, 0);
+            Usim[1] *= GetLink(i-1, j, k, l, 1);
 
             Usim[2] *= GetLink(i, j, k, l, 3);
-            Usim[2] *= GetLink(i, j, k, l+1, 1);
+            Usim[2] *= GetLink(i, j, k+1, l, 2);
             Usim[2] *= GetLink(i, j+1, k, l, 3).Inversed();
-            Usim[2] *= GetLink(i, j, k, l, 1).Inversed();
+            Usim[2] *= GetLink(i, j, k, l, 2).Inversed();
 
             Usim[3] *= GetLink(i, j, k, l, 3);
-            Usim[3] *= GetLink(i, j-1, k, l+1, 1).Inversed();
+            Usim[3] *= GetLink(i, j-1, k+1, l, 2).Inversed();
             Usim[3] *= GetLink(i, j-1, k, l, 3).Inversed();
-            Usim[3] *= GetLink(i, j-1, k, l, 1);
+            Usim[3] *= GetLink(i, j-1, k, l, 2);
 
             Usim[4] *= GetLink(i, j, k, l, 3);
-            Usim[4] *= GetLink(i, j, k, l+1, 2);
-            Usim[4] *= GetLink(i, j, k+1, l, 3).Inversed();
-            Usim[4] *= GetLink(i, j, k, l, 2).Inversed();
+            Usim[4] *= GetLink(i, j, k+1, l, 4);
+            Usim[4] *= GetLink(i, j, k, l+1, 3).Inversed();
+            Usim[4] *= GetLink(i, j, k, l, 4).Inversed();
 
             Usim[5] *= GetLink(i, j, k, l, 3);
-            Usim[5] *= GetLink(i, j, k-1, l+1, 2).Inversed();
-            Usim[5] *= GetLink(i, j, k-1, l, 3).Inversed();
-            Usim[5] *= GetLink(i, j, k-1, l, 2);
+            Usim[5] *= GetLink(i, j, k+1, l-1, 4).Inversed();
+            Usim[5] *= GetLink(i, j, k, l-1, 3).Inversed();
+            Usim[5] *= GetLink(i, j, k, l-1, 4);
+
+            break;
+        case 4:
+            Usim[0] *= GetLink(i, j, k, l, 4);
+            Usim[0] *= GetLink(i, j, k, l+1, 1);
+            Usim[0] *= GetLink(i+1, j, k, l, 4).Inversed();
+            Usim[0] *= GetLink(i, j, k, l, 1).Inversed();
+
+            Usim[1] *= GetLink(i, j, k, l, 4);
+            Usim[1] *= GetLink(i-1, j, k, l+1, 1).Inversed();
+            Usim[1] *= GetLink(i-1, j, k, l, 4).Inversed();
+            Usim[1] *= GetLink(i-1, j, k, l, 1);
+
+            Usim[2] *= GetLink(i, j, k, l, 4);
+            Usim[2] *= GetLink(i, j, k, l+1, 2);
+            Usim[2] *= GetLink(i, j+1, k, l, 4).Inversed();
+            Usim[2] *= GetLink(i, j, k, l, 2).Inversed();
+
+            Usim[3] *= GetLink(i, j, k, l, 4);
+            Usim[3] *= GetLink(i, j-1, k, l+1, 2).Inversed();
+            Usim[3] *= GetLink(i, j-1, k, l, 4).Inversed();
+            Usim[3] *= GetLink(i, j-1, k, l, 2);
+
+            Usim[4] *= GetLink(i, j, k, l, 4);
+            Usim[4] *= GetLink(i, j, k, l+1, 3);
+            Usim[4] *= GetLink(i, j, k+1, l, 4).Inversed();
+            Usim[4] *= GetLink(i, j, k, l, 3).Inversed();
+
+            Usim[5] *= GetLink(i, j, k, l, 4);
+            Usim[5] *= GetLink(i, j, k-1, l+1, 3).Inversed();
+            Usim[5] *= GetLink(i, j, k-1, l, 4).Inversed();
+            Usim[5] *= GetLink(i, j, k-1, l, 3);
 
             break;
     }
@@ -532,9 +538,9 @@ MatrixSU<Float, PrngClass> * PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-bool PeriodicGluodynamicsDim4_SU_Base
+bool GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                        ::MetropolisHit(int i, int j, int k, int l, int d,
+                        ::MetropolisHit(int i, int j, int k, int l, int direction,
                                             MatrixSU<Float, PrngClass> *Usim) {
     MatrixSU<Float, PrngClass> rand_matrix;
     Float epsilon = (1.0/beta < 0.5) ? (1.0/beta) : 0.5;
@@ -543,8 +549,8 @@ bool PeriodicGluodynamicsDim4_SU_Base
     Float action_old = 0.0;
     Float action_new = 0.0;
     for (int x = 0; x < 6; x++) {
-        action_old += Usim[x].Trace();
-        action_new += (rand_matrix * Usim[x]).Trace();
+        action_old += Usim[x].ReTrace();
+        action_new += (rand_matrix * Usim[x]).ReTrace();
     }
     action_old *= -beta/MatrixSU<Float, PrngClass>()
                                             .GetRepresentationDimension();
@@ -557,7 +563,7 @@ bool PeriodicGluodynamicsDim4_SU_Base
                         /(rand_gen.max() - rand_gen.min());
 
     if (rand_float < probability) {
-        m[i][j][k][l].up(d) = rand_matrix * m[i][j][k][l].up(d);
+        m[i][j][k][l].up(direction) = rand_matrix * m[i][j][k][l].up(direction);
         for (int x = 0; x < 6; x++) {
             Usim[x] = rand_matrix * Usim[x];
         }
@@ -575,7 +581,7 @@ bool PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-unsigned int PeriodicGluodynamicsDim4_SU_Base
+unsigned int GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                             ::SmallMonteCarloStep(unsigned int number_of_hits) {
     action_measured = false;
@@ -583,13 +589,13 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
     int j = rand_gen()%arr_size_2;
     int k = rand_gen()%arr_size_3;
     int l = rand_gen()%arr_size_4;
-    int d = rand_gen()%4;
-    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, d);
+    int direction = rand_gen() % 4 + 1;
+    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, direction);
 
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, d, Usim)) {
+        if (MetropolisHit(i, j, k, l, direction, Usim)) {
             number_of_changes++;
         }
     }
@@ -605,7 +611,7 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
         ::/*HeatBath_*/MonteCarloStep(float number_of_steps, unsigned int number_of_hits) {
     action_measured = false;
@@ -633,24 +639,24 @@ float PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-unsigned int PeriodicGluodynamicsDim4_SU_Base
+unsigned int GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                 ::HeatBath_SmallMonteCarloStep(unsigned int number_of_hits,
-                int i, int j, int k, int l, int d) {
+                int i, int j, int k, int l, int direction) {
     action_measured = false;
 //    int i = rand_gen()%arr_size_1;
 //    int j = rand_gen()%arr_size_2;
 //    int k = rand_gen()%arr_size_3;
 //    int l = rand_gen()%arr_size_4;
-//    int d = rand_gen()%4;
-    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, d);
+//    int direction = rand_gen()%4 + 1;
+    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, direction);
 
 
 
 
 //    MatrixSU<Float, PrngClass> ZXC(0);
-//    m[i][j][k][l].up(d) = MatrixSU<Float, PrngClass>(0, rand_gen());
-    m[i][j][k][l].up(d).HeatBathMatrix(rand_gen(), beta, Usim);
+//    m[i][j][k][l].up(direction) = MatrixSU<Float, PrngClass>(0, rand_gen());
+    m[i][j][k][l].up(direction).HeatBathMatrix(rand_gen(), beta, Usim);
 
     delete [] Usim;
 
@@ -664,16 +670,16 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>::HeatBath_MonteCarloStep
                         (float number_of_steps, unsigned int number_of_hits) {
     for (int i = 0; i < N1; i++) {
         for (int j = 0; j < N2; j++) {
             for (int k = 0; k < N3; k++) {
                 for (int l = 0; l < N4; l++) {
-                    for (int d = 0; d < 4; d++) {
+                    for (int direction = 1; direction < 5; direction++) {
                         HeatBath_SmallMonteCarloStep
-                                                (number_of_hits, i, j, k, l, d);
+                                                (number_of_hits, i, j, k, l, direction);
                     }
                 }
             }
@@ -696,7 +702,7 @@ float PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-unsigned int PeriodicGluodynamicsDim4_SU_Base
+unsigned int GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                 ::Timeslice_I_SmallMonteCarloStep(unsigned int number_of_hits,
                                                 int mean_timeslice, int width) {
@@ -707,15 +713,15 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
     int ran_num = rand_gen()%(4*width + 3);
     int l = mean_timeslice - width/2 + ran_num/4;
     l = (l >= 0 ? l%arr_size_4 : arr_size_4 + l%arr_size_4)%arr_size_4;
-    int d = ran_num%4;
-    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, d);
+    int direction = ran_num % 4 + 1;
+    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, direction);
 
 
 
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, d, Usim)) {
+        if (MetropolisHit(i, j, k, l, direction, Usim)) {
             number_of_changes++;
         }
     }
@@ -731,7 +737,7 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
         ::Timeslice_I_MonteCarloStep(float number_of_steps,
                 unsigned int number_of_hits, int mean_timeslice, int width) {
@@ -763,7 +769,7 @@ float PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-unsigned int PeriodicGluodynamicsDim4_SU_Base
+unsigned int GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
                 ::Timeslice_II_SmallMonteCarloStep(unsigned int number_of_hits,
                                                 int mean_timeslice, int width) {
@@ -774,15 +780,15 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
     int ran_num = rand_gen()%(4*width - 3) + 3;
     int l = mean_timeslice - width/2 + ran_num/4;
     l = (l >= 0 ? l%arr_size_4 : arr_size_4 + l%arr_size_4)%arr_size_4;
-    int d = ran_num%4;
-    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, d);
+    int direction = ran_num % 4 + 1;
+    MatrixSU<Float, PrngClass> *Usim = PrecalculatedPlaquettes(i, j, k, l, direction);
 
 
 
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, d, Usim)) {
+        if (MetropolisHit(i, j, k, l, direction, Usim)) {
             number_of_changes++;
         }
     }
@@ -798,7 +804,7 @@ unsigned int PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-float PeriodicGluodynamicsDim4_SU_Base
+float GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
         ::Timeslice_II_MonteCarloStep(float number_of_steps,
                 unsigned int number_of_hits, int mean_timeslice, int width) {
@@ -833,13 +839,13 @@ float PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                                            ::AverageWilsonLoop(int I, int J) {
+                                            ::AverageWilsonLoop(int I, int J) const {
     double sum = 0.0;
 
-    for (int i_direction = 0; i_direction < 4; i_direction++) {
-        for (int j_direction = 0; j_direction < 4; j_direction++) {
+    for (int i_direction = 1; i_direction < 5; i_direction++) {
+        for (int j_direction = 1; j_direction < 5; j_direction++) {
             if (i_direction == j_direction) {
                 continue;
             }
@@ -862,12 +868,12 @@ double PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
             ::AverageOrientedWilsonLoop(int I, int J,
-                                        int i_direction, int j_direction) {
-    if (I <= 0 || J <= 0 || i_direction < 0
-                || j_direction < 0 || i_direction > 3 || j_direction > 3
+                                        int i_direction, int j_direction) const {
+    if (I <= 0 || J <= 0 || i_direction < 1
+                || j_direction < 1 || i_direction > 4 || j_direction > 4
                 || i_direction == j_direction) {
         throw invalid_argument("PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS");
     }
@@ -899,12 +905,12 @@ double PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
             ::SingleWilsonLoop(int I, int J, int i_direction, int j_direction,
-                    int i, int j, int k, int l) {
-    if (I <= 0 || J <= 0 || i_direction < 0
-            || j_direction < 0 || i_direction > 3 || j_direction > 3
+                    int i, int j, int k, int l) const {
+    if (I <= 0 || J <= 0 || i_direction < 1
+            || j_direction < 1 || i_direction > 4 || j_direction > 4
             || i_direction == j_direction) {
         throw invalid_argument("PeriodicSingleWilsonLoop_WRONGPARAMETERS");
     }
@@ -914,175 +920,105 @@ double PeriodicGluodynamicsDim4_SU_Base
 
     const int Shift = 1000;
     switch (i_direction*Shift + j_direction) {
-        case (0*Shift + 1):
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+x, j, k, l, 0);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+I, j+y, k, l, 1);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+I-1-x, j+J, k, l, 0).Inversed();
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+J-1-y, k, l, 1).Inversed();
-            }
-            return U.Trace();
-
-
-        case (1*Shift + 0):
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+y, j, k, l, 0);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+J, j+x, k, l, 1);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+J-1-y, j+I, k, l, 0).Inversed();
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+I-1-x, k, l, 1).Inversed();
-            }
-            return U.Trace();
-
-
-
-
-        case (0*Shift + 2):
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+x, j, k, l, 0);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+I, j, k+y, l, 2);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+I-1-x, j, k+J, l, 0).Inversed();
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k+J-1-y, l, 2).Inversed();
-            }
-            return U.Trace();
-
-
-        case (2*Shift + 0):
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+y, j, k, l, 0);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+J, j, k+x, l, 2);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+J-1-y, j, k+I, l, 0).Inversed();
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k+I-1-x, l, 2).Inversed();
-            }
-            return U.Trace();
-
-
-
-
-
-        case (0*Shift + 3):
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+x, j, k, l, 0);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+I, j, k, l+y, 3);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+I-1-x, j, k, l+J, 0).Inversed();
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k, l+J-1-y, 3).Inversed();
-            }
-            return U.Trace();
-
-
-        case (3*Shift + 0):
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+y, j, k, l, 0);
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i+J, j, k, l+x, 3);
-            }
-            for (int y = 0; y < J; y++) {
-                U *= GetLink(i+J-1-y, j, k, l+I, 0).Inversed();
-            }
-            for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k, l+I-1-x, 3).Inversed();
-            }
-            return U.Trace();
-
-
-
-
-
         case (1*Shift + 2):
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+x, k, l, 1);
+                U *= GetLink(i+x, j, k, l, 1);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+I, k+y, l, 2);
+                U *= GetLink(i+I, j+y, k, l, 2);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+I-1-x, k+J, l, 1).Inversed();
+                U *= GetLink(i+I-1-x, j+J, k, l, 1).Inversed();
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k+J-1-y, l, 2).Inversed();
+                U *= GetLink(i, j+J-1-y, k, l, 2).Inversed();
             }
-            return U.Trace();
+            return U.ReTrace();
 
 
         case (2*Shift + 1):
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+y, k, l, 1);
+                U *= GetLink(i+y, j, k, l, 1);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+J, k+x, l, 2);
+                U *= GetLink(i+J, j+x, k, l, 2);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+J-1-y, k+I, l, 1).Inversed();
+                U *= GetLink(i+J-1-y, j+I, k, l, 1).Inversed();
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k+I-1-x, l, 2).Inversed();
+                U *= GetLink(i, j+I-1-x, k, l, 2).Inversed();
             }
-            return U.Trace();
-
+            return U.ReTrace();
 
 
 
 
         case (1*Shift + 3):
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+x, k, l, 1);
+                U *= GetLink(i+x, j, k, l, 1);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+I, k, l+y, 3);
+                U *= GetLink(i+I, j, k+y, l, 3);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+I-1-x, k, l+J, 1).Inversed();
+                U *= GetLink(i+I-1-x, j, k+J, l, 1).Inversed();
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k, l+J-1-y, 3).Inversed();
+                U *= GetLink(i, j, k+J-1-y, l, 3).Inversed();
             }
-            return U.Trace();
-            break;
+            return U.ReTrace();
+
 
         case (3*Shift + 1):
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+y, k, l, 1);
+                U *= GetLink(i+y, j, k, l, 1);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j+J, k, l+x, 3);
+                U *= GetLink(i+J, j, k+x, l, 3);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j+J-1-y, k, l+I, 1).Inversed();
+                U *= GetLink(i+J-1-y, j, k+I, l, 1).Inversed();
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k, l+I-1-x, 3).Inversed();
+                U *= GetLink(i, j, k+I-1-x, l, 3).Inversed();
             }
-            return U.Trace();
+            return U.ReTrace();
+
+
+
+
+
+        case (1*Shift + 4):
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i+x, j, k, l, 1);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i+I, j, k, l+y, 4);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i+I-1-x, j, k, l+J, 1).Inversed();
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k, l+J-1-y, 4).Inversed();
+            }
+            return U.ReTrace();
+
+
+        case (4*Shift + 1):
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i+y, j, k, l, 1);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i+J, j, k, l+x, 4);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i+J-1-y, j, k, l+I, 1).Inversed();
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k, l+I-1-x, 4).Inversed();
+            }
+            return U.ReTrace();
 
 
 
@@ -1090,34 +1026,104 @@ double PeriodicGluodynamicsDim4_SU_Base
 
         case (2*Shift + 3):
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k+x, l, 2);
+                U *= GetLink(i, j+x, k, l, 2);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k+I, l+y, 3);
+                U *= GetLink(i, j+I, k+y, l, 3);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k+I-1-x, l+J, 2).Inversed();
+                U *= GetLink(i, j+I-1-x, k+J, l, 2).Inversed();
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k, l+J-1-y, 3).Inversed();
+                U *= GetLink(i, j, k+J-1-y, l, 3).Inversed();
             }
-            return U.Trace();
+            return U.ReTrace();
 
 
         case (3*Shift + 2):
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k+y, l, 2);
+                U *= GetLink(i, j+y, k, l, 2);
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k+J, l+x, 3);
+                U *= GetLink(i, j+J, k+x, l, 3);
             }
             for (int y = 0; y < J; y++) {
-                U *= GetLink(i, j, k+J-1-y, l+I, 2).Inversed();
+                U *= GetLink(i, j+J-1-y, k+I, l, 2).Inversed();
             }
             for (int x = 0; x < I; x++) {
-                U *= GetLink(i, j, k, l+I-1-x, 3).Inversed();
+                U *= GetLink(i, j, k+I-1-x, l, 3).Inversed();
             }
-            return U.Trace();
+            return U.ReTrace();
+
+
+
+
+
+        case (2*Shift + 4):
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j+x, k, l, 2);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j+I, k, l+y, 4);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j+I-1-x, k, l+J, 2).Inversed();
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k, l+J-1-y, 4).Inversed();
+            }
+            return U.ReTrace();
+            break;
+
+        case (4*Shift + 2):
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j+y, k, l, 2);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j+J, k, l+x, 4);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j+J-1-y, k, l+I, 2).Inversed();
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k, l+I-1-x, 4).Inversed();
+            }
+            return U.ReTrace();
+
+
+
+
+
+        case (3*Shift + 4):
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k+x, l, 3);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k+I, l+y, 4);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k+I-1-x, l+J, 3).Inversed();
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k, l+J-1-y, 4).Inversed();
+            }
+            return U.ReTrace();
+
+
+        case (4*Shift + 3):
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k+y, l, 3);
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k+J, l+x, 4);
+            }
+            for (int y = 0; y < J; y++) {
+                U *= GetLink(i, j, k+J-1-y, l+I, 3).Inversed();
+            }
+            for (int x = 0; x < I; x++) {
+                U *= GetLink(i, j, k, l+I-1-x, 4).Inversed();
+            }
+            return U.ReTrace();
     }
 
     return loop;
@@ -1128,17 +1134,17 @@ double PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
         template <typename Node> class CycledArrayDim4,
         typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
     <MatrixSU, CycledArrayDim4, Float, PrngClass>
     ::SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
-                  int i, int j, int k, int l) {
+                  int i, int j, int k, int l) const {
     if (a_direction == b_direction || a_direction == c_direction
         || a_direction == d_direction || b_direction == c_direction
         || b_direction == d_direction || c_direction == d_direction
-        || a_direction < 0 || a_direction > 3
-        || b_direction < 0 || b_direction > 3
-        || c_direction < 0 || c_direction > 3
-        || d_direction < 0 || d_direction > 3) {
+        || a_direction < 1 || a_direction > 4
+        || b_direction < 1 || b_direction > 4
+        || c_direction < 1 || c_direction > 4
+        || d_direction < 1 || d_direction > 4) {
         throw invalid_argument("PeriodicSingleKnot_WRONGPARAMETERS");
     }
 
@@ -1152,294 +1158,294 @@ double PeriodicGluodynamicsDim4_SU_Base
     double loop = 0.0;
     MatrixSU<Float, PrngClass> U(0);
     switch (a_direction*A + b_direction*B + c_direction*C + d_direction*D) {
-        case (0 * A + 1 * B + 2 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 3) *
-                    GetLink(i, j, k, l+1, 2).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed();
-
-            return U.Trace();
-
-
-        case (0 * A + 1 * B + 3 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 2) *
-                    GetLink(i, j, k+1, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed();
-
-            return U.Trace();
-
-        case (0 * A + 2 * B + 1 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
+        case (1 * A + 2 * B + 3 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j+1, k, l, 1).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed();
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 4) *
+                    GetLink(i, j, k, l+1, 3).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (0 * A + 2 * B + 3 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
+
+        case (1 * A + 2 * B + 4 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j+1, k, l, 1).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1) *
-                    GetLink(i, j+1, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed();
+                    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 3) *
+                    GetLink(i, j, k+1, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (0 * A + 3 * B + 1 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
+        case (1 * A + 3 * B + 2 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed();
+
+            return U.ReTrace();
+
+        case (1 * A + 3 * B + 4 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j+1, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.ReTrace();
+
+        case (1 * A + 4 * B + 2 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i+1, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.ReTrace();
+
+        case (1 * A + 4 * B + 3 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 1) *
+                    GetLink(i+1, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.ReTrace();
+
+        case (2 * A + 1 * B + 3 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 1) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 4) *
+                    GetLink(i, j, k, l+1, 3).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed();
+
+            return U.ReTrace();
+
+        case (2 * A + 1 * B + 4 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 1) *
+                    GetLink(i+1, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 3) *
+                    GetLink(i, j, k+1, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.ReTrace();
+
+        case (2 * A + 3 * B + 1 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2).Inversed() *
                     GetLink(i, j, k, l, 3).Inversed() *
                     GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed();
+                    GetLink(i+1, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (0 * A + 3 * B + 2 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0).Inversed() *
+        case (2 * A + 3 * B + 4 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2).Inversed() *
                     GetLink(i, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1) *
-                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i+1, j, k, l, 4).Inversed() *
                     GetLink(i, j, k, l, 1).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (1 * A + 0 * B + 2 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 3) *
+        case (2 * A + 4 * B + 1 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 4) *
                     GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i+1, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
                     GetLink(i, j, k, l, 3).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (1 * A + 0 * B + 3 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
+        case (2 * A + 4 * B + 3 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
                     GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.ReTrace();
+
+        case (3 * A + 1 * B + 2 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed();
+
+            return U.ReTrace();
+
+        case (3 * A + 1 * B + 4 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 1) *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 4) *
                     GetLink(i, j, k, l+1, 2) *
-                    GetLink(i, j, k+1, l, 3).Inversed() *
+                    GetLink(i, j+1, k, l, 4).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (1 * A + 2 * B + 0 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1).Inversed() *
+        case (3 * A + 2 * B + 1 * C + 4 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed();
-
-            return U.Trace();
-
-        case (1 * A + 2 * B + 3 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0) *
-                    GetLink(i+1, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
-
-        case (1 * A + 3 * B + 0 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k, l, 1) *
+                    GetLink(i+1, j, k, l, 4) *
                     GetLink(i, j, k, l+1, 1).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0) *
+                    GetLink(i, j, k, l, 4).Inversed();
+
+            return U.ReTrace();
+
+        case (3 * A + 2 * B + 4 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i+1, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed();
+
+            return U.ReTrace();
+
+        case (3 * A + 4 * B + 1 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 4) *
+                    GetLink(i, j, k, l+1, 3).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j+1, k, l, 1).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (1 * A + 3 * B + 2 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed() *
+        case (3 * A + 4 * B + 2 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 4) *
+                    GetLink(i, j, k, l+1, 3).Inversed() *
+                    GetLink(i, j, k, l, 4).Inversed() *
                     GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i, j+1, k, l, 1) *
                     GetLink(i+1, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
-
-        case (2 * A + 0 * B + 1 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0) *
-                    GetLink(i+1, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed();
-
-            return U.Trace();
-
-        case (2 * A + 0 * B + 3 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0) *
-                    GetLink(i+1, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1) *
-                    GetLink(i, j+1, k, l, 3).Inversed() *
                     GetLink(i, j, k, l, 1).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (2 * A + 1 * B + 0 * C + 3 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1) *
-                    GetLink(i, j+1, k, l, 2).Inversed() *
+        case (4 * A + 1 * B + 2 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i+1, j, k, l, 4).Inversed() *
                     GetLink(i, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0) *
+                    GetLink(i, j, k, l, 2) *
+                    GetLink(i, j+1, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed();
+
+            return U.ReTrace();
+
+        case (4 * A + 1 * B + 3 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 1) *
+                    GetLink(i+1, j, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 1).Inversed() *
+                    GetLink(i, j, k, l, 3) *
+                    GetLink(i, j, k+1, l, 2) *
+                    GetLink(i, j+1, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed();
+
+            return U.ReTrace();
+
+        case (4 * A + 2 * B + 1 * C + 3 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j+1, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
+                    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0).Inversed() *
+                    GetLink(i, j, k+1, l, 1).Inversed() *
                     GetLink(i, j, k, l, 3).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (2 * A + 1 * B + 3 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1) *
-                    GetLink(i, j+1, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed() *
+        case (4 * A + 2 * B + 3 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 2) *
+                    GetLink(i, j+1, k, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 2).Inversed() *
                     GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0) *
-                    GetLink(i+1, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
-
-        case (2 * A + 3 * B + 0 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 3) *
-                    GetLink(i, j, k, l+1, 2).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed();
-
-            return U.Trace();
-
-        case (2 * A + 3 * B + 1 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 3) *
-                    GetLink(i, j, k, l+1, 2).Inversed() *
-                    GetLink(i, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
-
-        case (3 * A + 0 * B + 1 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0) *
-                    GetLink(i+1, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 2) *
-                    GetLink(i, j, k+1, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed();
-
-            return U.Trace();
-
-        case (3 * A + 0 * B + 2 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 0) *
-                    GetLink(i+1, j, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed() *
-                    GetLink(i, j, k, l, 2) *
                     GetLink(i, j, k+1, l, 1) *
-                    GetLink(i, j+1, k, l, 2).Inversed() *
+                    GetLink(i+1, j, k, l, 3).Inversed() *
                     GetLink(i, j, k, l, 1).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (3 * A + 1 * B + 0 * C + 2 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1) *
-                    GetLink(i, j+1, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0) *
+        case (4 * A + 3 * B + 1 * C + 2 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 3) *
+                    GetLink(i, j, k+1, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
+                    GetLink(i, j, k, l, 1) *
                     GetLink(i+1, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0).Inversed() *
+                    GetLink(i, j+1, k, l, 1).Inversed() *
                     GetLink(i, j, k, l, 2).Inversed();
 
-            return U.Trace();
+            return U.ReTrace();
 
-        case (3 * A + 1 * B + 2 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 1) *
-                    GetLink(i, j+1, k, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 1).Inversed() *
+        case (4 * A + 3 * B + 2 * C + 1 * D) :
+            U *=    GetLink(i, j, k, l, 4) *
+                    GetLink(i, j, k, l+1, 3) *
+                    GetLink(i, j, k+1, l, 4).Inversed() *
+                    GetLink(i, j, k, l, 3).Inversed() *
                     GetLink(i, j, k, l, 2) *
-                    GetLink(i, j, k+1, l, 0) *
+                    GetLink(i, j+1, k, l, 1) *
                     GetLink(i+1, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
-
-        case (3 * A + 2 * B + 0 * C + 1 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 2) *
-                    GetLink(i, j, k+1, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0).Inversed() *
                     GetLink(i, j, k, l, 1).Inversed();
 
-            return U.Trace();
-
-        case (3 * A + 2 * B + 1 * C + 0 * D) :
-            U *=    GetLink(i, j, k, l, 3) *
-                    GetLink(i, j, k, l+1, 2) *
-                    GetLink(i, j, k+1, l, 3).Inversed() *
-                    GetLink(i, j, k, l, 2).Inversed() *
-                    GetLink(i, j, k, l, 1) *
-                    GetLink(i, j+1, k, l, 0) *
-                    GetLink(i+1, j, k, l, 1).Inversed() *
-                    GetLink(i, j, k, l, 0).Inversed();
-
-            return U.Trace();
+            return U.ReTrace();
     }
     
     throw runtime_error("SingleKnot runtime error");
@@ -1453,9 +1459,9 @@ double PeriodicGluodynamicsDim4_SU_Base
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
-double PeriodicGluodynamicsDim4_SU_Base
+double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                                                            ::AverageFace() {
+                                                            ::AverageFace() const {
     return 1 - AverageWilsonLoop(1, 1)/MatrixSU<Float, PrngClass>()
                                                 .GetRepresentationDimension();
 }
@@ -1499,7 +1505,7 @@ ifstream &operator>> (ifstream &stream, PeriodicGluodynamicsDim4_SU<MatrixSU,
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class DynamicArray,
                 typename Float, class PrngClass>
-class PeriodicGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
+class PeriodicGluodynamicsDim4_SU : public GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, DynamicArray, Float, PrngClass>
 {
     public:
@@ -1507,11 +1513,11 @@ class PeriodicGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
         PeriodicGluodynamicsDim4_SU(int _N1, int _N2, int _N3, int _N4,
                                 int mode, float g0_input, unsigned int seed);
 
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::m;
 
         MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
-                                                            int direction);
+                                                            int direction) const override;
 
 
         friend ofstream &operator<<
@@ -1525,25 +1531,25 @@ class PeriodicGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
 
 
 
-        double AverageOrientedPolyakovLoop(int direction);
-        double SinglePolyakovLoop(int direction, int i, int j, int k);
+        double AverageOrientedPolyakovLoop(int direction) const;
+        double SinglePolyakovLoop(int direction, int i, int j, int k) const;
 
 
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::rand_gen;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::arr_size_1;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::arr_size_2;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::arr_size_3;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::arr_size_4;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::g0;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::beta;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, DynamicArray, Float, PrngClass>::t;
 };
 
@@ -1578,14 +1584,36 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 MatrixSU<Float, PrngClass> PeriodicGluodynamicsDim4_SU<MatrixSU,
                                     SafeArrayDim4, Float, PrngClass>
-                ::GetLink   (int x, int y, int z, int t, int direction) {
+                ::GetLink   (int x, int y, int z, int t, int direction) const {
+    if (direction < 0) {
+        switch (direction) {
+            case -1:
+                x--;
+                break;
+            case -2:
+                y--;
+                break;
+            case -3:
+                z--;
+                break;
+            case -4:
+                t--;
+                break;
+        }
+    } else if (direction == 0) {
+        throw runtime_error("GetLinkPeriodic");
+    }
 
     x = (x >= 0 ? x%arr_size_1 : arr_size_1 + x%arr_size_1)%arr_size_1;
     y = (y >= 0 ? y%arr_size_2 : arr_size_2 + y%arr_size_2)%arr_size_2;
     z = (z >= 0 ? z%arr_size_3 : arr_size_3 + z%arr_size_3)%arr_size_3;
     t = (t >= 0 ? t%arr_size_4 : arr_size_4 + t%arr_size_4)%arr_size_4;
 
-    return m[x][y][z][t].up(direction);
+    if (direction > 0) {
+        return m[x][y][z][t].up(direction);
+    } else {
+        return m[x][y][z][t].up(-direction).Inversed();
+    }
 }
 
 
@@ -1614,10 +1642,9 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
             ::PeriodicGluodynamicsDim4_SU (int N1, int N2, int N3, int N4,
                             int mode, float g0_input, unsigned int _seed)
-:PeriodicGluodynamicsDim4_SU_Base<MatrixSU, CycledArrayDim4, Float, PrngClass>
+:GluodynamicsWithoutBorderDim4_SU_Base<MatrixSU, CycledArrayDim4, Float, PrngClass>
                                         (N1, N2, N3, N4, mode, g0_input, _seed)
 {
-
 }
 
 
@@ -1632,24 +1659,24 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
 double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
-                        ::AverageOrientedPolyakovLoop(int direction) {
-    if (direction < 0 || direction > 3) {
+                        ::AverageOrientedPolyakovLoop(int direction) const {
+    if (direction < 1 || direction > 4) {
         throw invalid_argument("PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS");
     }
 
 
     double sum = 0;
     switch (direction) {
-        case 0:
+        case 1:
             for (int j = 0; j < arr_size_2; j++) {
                 for (int k = 0; k < arr_size_3; k++) {
                     for (int l = 0; l < arr_size_4; l++) {
                         MatrixSU<Float, PrngClass> U(0);
 
                         for (int x = 0; x < arr_size_1; x++) {
-                            U *= GetLink(x, j, k, l, 0);
+                            U *= GetLink(x, j, k, l, direction);
                         }
-                        sum += U.Trace();
+                        sum += U.ReTrace();
                     }
                 }
             }
@@ -1657,32 +1684,32 @@ double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
             break;
 
 
-        case 1:
+        case 2:
             for (int i = 0; i < arr_size_1; i++) {
                 for (int k = 0; k < arr_size_3; k++) {
                     for (int l = 0; l < arr_size_4; l++) {
                         MatrixSU<Float, PrngClass> U(0);
 
                         for (int x = 0; x < arr_size_2; x++) {
-                            U *= GetLink(i, x, k, l, 1);
+                            U *= GetLink(i, x, k, l, direction);
                         }
-                        sum += U.Trace();
+                        sum += U.ReTrace();
                     }
                 }
             }
             sum /= arr_size_1*arr_size_3*arr_size_4;
             break;
 
-        case 2:
+        case 3:
             for (int i = 0; i < arr_size_1; i++) {
                 for (int j = 0; j < arr_size_2; j++) {
                     for (int l = 0; l < arr_size_4; l++) {
                         MatrixSU<Float, PrngClass> U(0);
 
                         for (int x = 0; x < arr_size_3; x++) {
-                            U *= GetLink(i, j, x, l, 2);
+                            U *= GetLink(i, j, x, l, direction);
                         }
-                        sum += U.Trace();
+                        sum += U.ReTrace();
                     }
                 }
             }
@@ -1691,16 +1718,16 @@ double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
 
 
 
-        case 3:
+        case 4:
             for (int i = 0; i < arr_size_1; i++) {
                 for (int j = 0; j < arr_size_2; j++) {
                     for (int k = 0; k < arr_size_3; k++) {
                         MatrixSU<Float, PrngClass> U(0);
 
                         for (int x = 0; x < arr_size_4; x++) {
-                            U *= GetLink(i, j, k, x, 3);
+                            U *= GetLink(i, j, k, x, direction);
                         }
-                        sum += U.Trace();
+                        sum += U.ReTrace();
 
                     }
                 }
@@ -1722,39 +1749,40 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class CycledArrayDim4,
                 typename Float, class PrngClass>
 double PeriodicGluodynamicsDim4_SU<MatrixSU, CycledArrayDim4, Float, PrngClass>
-                    ::SinglePolyakovLoop(int direction, int i, int j, int k) {
-    if (direction < 0 || direction > 3) {
+                    ::SinglePolyakovLoop(int direction, int i, int j, int k) const {
+    if (direction < 1 || direction > 4) {
         throw invalid_argument("PeriodicAverageOrientedPolyakovLoop_WRONGPARAMETERS");
     }
 
 
     MatrixSU<Float, PrngClass> U(0);
     switch (direction) {
-        case 0:
-            for (int x = 0; x < arr_size_1; x++) {
-                U *= GetLink(x, i, j, k, 0);
-            }
-            return U.Trace();
-
         case 1:
-            for (int x = 0; x < arr_size_2; x++) {
-                U *= GetLink(i, x, j, k, 1);
+            for (int x = 0; x < arr_size_1; x++) {
+                U *= GetLink(x, i, j, k, direction);
             }
-            return U.Trace();
+            return U.ReTrace();
 
         case 2:
-            for (int x = 0; x < arr_size_3; x++) {
-                U *= GetLink(i, j, x, k, 2);
+            for (int x = 0; x < arr_size_2; x++) {
+                U *= GetLink(i, x, j, k, direction);
             }
-            return U.Trace();
+            return U.ReTrace();
 
         case 3:
-            for (int x = 0; x < arr_size_4; x++) {
-                U *= GetLink(i, j, k, x, 3);
+            for (int x = 0; x < arr_size_3; x++) {
+                U *= GetLink(i, j, x, k, direction);
             }
-            return U.Trace();
+            return U.ReTrace();
+
+        case 4:
+            for (int x = 0; x < arr_size_4; x++) {
+                U *= GetLink(i, j, k, x, direction);
+            }
+            return U.ReTrace();
     }
 
+    throw runtime_error("Unknown direction of Polyakov loop");
     return 0.0;
 }
 
@@ -1808,7 +1836,7 @@ ifstream &operator>> (ifstream &stream, xReflectionGluodynamicsDim4_SU<MatrixSU,
 template <template <typename _Float, class _PrngClass> class MatrixSU,
                 template <typename Node> class SafeArrayDim4,
                 typename Float, class PrngClass>
-class xReflectionGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
+class xReflectionGluodynamicsDim4_SU : public GluodynamicsWithoutBorderDim4_SU_Base
                                     <MatrixSU, SafeArrayDim4, Float, PrngClass>
 {
     public:
@@ -1816,11 +1844,11 @@ class xReflectionGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
         xReflectionGluodynamicsDim4_SU(int _N1, int _N2, int _N3, int _N4,
                                 int mode, float g0_input, unsigned int seed);
 
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::m;
 
         MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
-                                                            int direction);
+                                                            int direction) const override;
 
         friend ofstream &operator<<
             <MatrixSU, SafeArrayDim4, Float, PrngClass>
@@ -1836,21 +1864,21 @@ class xReflectionGluodynamicsDim4_SU : public PeriodicGluodynamicsDim4_SU_Base
 
 
 
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::rand_gen;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::arr_size_1;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::arr_size_2;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::arr_size_3;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::arr_size_4;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::g0;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::beta;
-        using PeriodicGluodynamicsDim4_SU_Base
+        using GluodynamicsWithoutBorderDim4_SU_Base
             <MatrixSU, SafeArrayDim4, Float, PrngClass>::t;
 };
 
@@ -1887,19 +1915,43 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 MatrixSU<Float, PrngClass> xReflectionGluodynamicsDim4_SU<MatrixSU,
                                     SafeArrayDim4, Float, PrngClass>
-                        ::GetLink (int x, int y, int z, int t, int direction) {
+                        ::GetLink (int x, int y, int z, int t, int direction) const {
+    if (direction < 0) {
+        switch (direction) {
+            case -1:
+                x--;
+                break;
+            case -2:
+                y--;
+                break;
+            case -3:
+                z--;
+                break;
+            case -4:
+                t--;
+                break;
+        }
+    } else if (direction == 0) {
+        throw runtime_error("GetLinkMobius");
+    }
+
+
     t = (t >= 0 ? t%(2*arr_size_4) : 2*arr_size_4 + t%(2*arr_size_4))%
                                                                 (2*arr_size_4);
 
     if (t/arr_size_4 == 1) {
-        if (direction == 0) {
+        if (direction == 1) {
             x = arr_size_1 - x - 1;
             x = (x >= 0 ? x%arr_size_1 : arr_size_1 + x%arr_size_1)%arr_size_1;
             y = (y >= 0 ? y%arr_size_2 : arr_size_2 + y%arr_size_2)%arr_size_2;
             z = (z >= 0 ? z%arr_size_3 : arr_size_3 + z%arr_size_3)%arr_size_3;
             t = (t >= 0 ? t%arr_size_4 : arr_size_4 + t%arr_size_4)%arr_size_4;
 
-            return m[x][y][z][t].up(0).Inversed();
+            if (direction > 0) {
+                return m[x][y][z][t].up(direction).Inversed();
+            } else {
+                return m[x][y][z][t].up(-direction);
+            }
         } else {
             x = arr_size_1 - x;
             x = (x >= 0 ? x%arr_size_1 : arr_size_1 + x%arr_size_1)%arr_size_1;
@@ -1907,14 +1959,22 @@ MatrixSU<Float, PrngClass> xReflectionGluodynamicsDim4_SU<MatrixSU,
             z = (z >= 0 ? z%arr_size_3 : arr_size_3 + z%arr_size_3)%arr_size_3;
             t = (t >= 0 ? t%arr_size_4 : arr_size_4 + t%arr_size_4)%arr_size_4;
 
-            return m[x][y][z][t].up(direction);
+            if (direction > 0) {
+                return m[x][y][z][t].up(direction);
+            } else {
+                return m[x][y][z][t].up(-direction).Inversed();
+            }
         }
     } else {
         x = (x >= 0 ? x%arr_size_1 : arr_size_1 + x%arr_size_1)%arr_size_1;
         y = (y >= 0 ? y%arr_size_2 : arr_size_2 + y%arr_size_2)%arr_size_2;
         z = (z >= 0 ? z%arr_size_3 : arr_size_3 + z%arr_size_3)%arr_size_3;
 
-        return m[x][y][z][t].up(direction);
+        if (direction > 0) {
+            return m[x][y][z][t].up(direction);
+        } else {
+            return m[x][y][z][t].up(-direction).Inversed();
+        }
     }
 }
 
@@ -1927,10 +1987,9 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 xReflectionGluodynamicsDim4_SU<MatrixSU, SafeArrayDim4, Float, PrngClass>
             ::xReflectionGluodynamicsDim4_SU (int N1, int N2, int N3, int N4,
                             int mode, float g0_input, unsigned int _seed)
-:   PeriodicGluodynamicsDim4_SU_Base<MatrixSU, SafeArrayDim4, Float, PrngClass>
+:   GluodynamicsWithoutBorderDim4_SU_Base<MatrixSU, SafeArrayDim4, Float, PrngClass>
                                         (N1, N2, N3, N4, mode, g0_input, _seed)
 {
-
 }
 
 
