@@ -50,9 +50,26 @@ public:
 
 
 
+enum class UnsignedDirection {
+    X = 1,
+    Y = 2,
+    Z = 3,
+    T = 4
+};
+
+const UnsignedDirection UnsignedDirections[] = {UnsignedDirection::X, UnsignedDirection::Y, UnsignedDirection::Z, UnsignedDirection::T};
 
 
-
+enum class SignedDirection {
+    X_up = 1,
+    Y_up = 2,
+    Z_up = 3,
+    T_up = 4,
+    X_down = -1,
+    Y_down = -2,
+    Z_down = -3,
+    T_down = -4
+};
 
 
 
@@ -76,12 +93,16 @@ class GluodynamicsWithoutBorderDim4_SU_Base
 
         virtual MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
                                                             int direction) const = 0;
+        virtual MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                                   SignedDirection direction) const = 0;
+        virtual MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                                   UnsignedDirection direction) const = 0;
         MatrixSU<Float, PrngClass> * PrecalculatedPlaquettes
                                         (int i, int j, int k, int l, int direction) const ;
 
 
-        bool MetropolisHit(int i, int j, int k, int l, int direction,
-                                            MatrixSU<Float, PrngClass> *Usim);
+        bool MetropolisHit(int i, int j, int k, int l, UnsignedDirection direction,
+                           MatrixSU<Float, PrngClass> *Usim);
         unsigned int SmallMonteCarloStep(unsigned int number_of_hits);
         float MonteCarloStep(float number_of_steps,
                                     unsigned int number_of_hits);
@@ -104,12 +125,12 @@ class GluodynamicsWithoutBorderDim4_SU_Base
 
         double Action();
         double AverageWilsonLoop(int I, int J) const;
-        double AverageOrientedWilsonLoop(int I, int J, int i_direction,
-                                                            int j_direction) const;
-        double SingleWilsonLoop(int I, int J, int i_direction, int j_direction,
-                int i, int j, int k, int l) const;
-        double SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
-                            int i, int j, int k, int l) const;
+        double AverageOrientedWilsonLoop(int I, int J, UnsignedDirection i_direction,
+                                         UnsignedDirection j_direction) const;
+        double SingleWilsonLoop(int I, int J, UnsignedDirection i_direction, UnsignedDirection j_direction,
+                                int i, int j, int k, int l) const;
+        double SingleKnot(SignedDirection a_direction, SignedDirection b_direction, SignedDirection c_direction, SignedDirection d_direction,
+                          int i, int j, int k, int l) const;
         double AverageFace() const;
 
         float Get_g0() const;
@@ -549,8 +570,8 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 bool GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-                        ::MetropolisHit(int i, int j, int k, int l, int direction,
-                                            MatrixSU<Float, PrngClass> *Usim) {
+                        ::MetropolisHit(int i, int j, int k, int l, UnsignedDirection direction,
+                                        MatrixSU<Float, PrngClass> *Usim) {
     MatrixSU<Float, PrngClass> rand_matrix;
     Float epsilon = (1.0/beta < 0.5) ? (1.0/beta) : 0.5;
 //        Float epsilon = 0.01;
@@ -572,7 +593,7 @@ bool GluodynamicsWithoutBorderDim4_SU_Base
                         /(rand_gen.max() - rand_gen.min());
 
     if (rand_float < probability) {
-        m[i][j][k][l].up(direction) = rand_matrix * m[i][j][k][l].up(direction);
+        m[i][j][k][l].up(int(direction)) = rand_matrix * m[i][j][k][l].up(int(direction));
         for (int x = 0; x < 6; x++) {
             Usim[x] = rand_matrix * Usim[x];
         }
@@ -604,7 +625,7 @@ unsigned int GluodynamicsWithoutBorderDim4_SU_Base
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, direction, Usim)) {
+        if (MetropolisHit(i, j, k, l, UnsignedDirection(direction), Usim)) {
             number_of_changes++;
         }
     }
@@ -730,7 +751,7 @@ unsigned int GluodynamicsWithoutBorderDim4_SU_Base
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, direction, Usim)) {
+        if (MetropolisHit(i, j, k, l, UnsignedDirection(direction), Usim)) {
             number_of_changes++;
         }
     }
@@ -797,7 +818,7 @@ unsigned int GluodynamicsWithoutBorderDim4_SU_Base
 
     unsigned int number_of_changes = 0;
     for (unsigned int hit = 0; hit < number_of_hits; hit++) {
-        if (MetropolisHit(i, j, k, l, direction, Usim)) {
+        if (MetropolisHit(i, j, k, l, UnsignedDirection(direction), Usim)) {
             number_of_changes++;
         }
     }
@@ -853,8 +874,8 @@ double GluodynamicsWithoutBorderDim4_SU_Base
                                             ::AverageWilsonLoop(int I, int J) const {
     double sum = 0.0;
 
-    for (int i_direction = 1; i_direction < 5; i_direction++) {
-        for (int j_direction = 1; j_direction < 5; j_direction++) {
+    for (const auto &i_direction : UnsignedDirections) {
+        for (const auto &j_direction : UnsignedDirections) {
             if (i_direction == j_direction) {
                 continue;
             }
@@ -880,10 +901,8 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
 double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
             ::AverageOrientedWilsonLoop(int I, int J,
-                                        int i_direction, int j_direction) const {
-    if (I <= 0 || J <= 0 || i_direction < 1
-                || j_direction < 1 || i_direction > 4 || j_direction > 4
-                || i_direction == j_direction) {
+                                        UnsignedDirection i_direction, UnsignedDirection j_direction) const {
+    if (I <= 0 || J <= 0 || i_direction == j_direction) {
         throw invalid_argument("PeriodicAverageOrientedWilsonLoop_WRONGPARAMETERS");
     }
 
@@ -916,11 +935,9 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
                 typename Float, class PrngClass>
 double GluodynamicsWithoutBorderDim4_SU_Base
         <MatrixSU, CycledArrayDim4, Float, PrngClass>
-            ::SingleWilsonLoop(int I, int J, int i_direction, int j_direction,
-                    int i, int j, int k, int l) const {
-    if (I <= 0 || J <= 0 || i_direction < 1
-            || j_direction < 1 || i_direction > 4 || j_direction > 4
-            || i_direction == j_direction) {
+            ::SingleWilsonLoop(int I, int J, UnsignedDirection i_direction, UnsignedDirection j_direction,
+                               int i, int j, int k, int l) const {
+    if (I <= 0 || J <= 0 || i_direction == j_direction) {
         throw invalid_argument("PeriodicSingleWilsonLoop_WRONGPARAMETERS");
     }
 
@@ -928,7 +945,7 @@ double GluodynamicsWithoutBorderDim4_SU_Base
     MatrixSU<Float, PrngClass> U(0);
 
     const int Shift = 1000;
-    switch (i_direction*Shift + j_direction) {
+    switch (int(i_direction)*Shift + int(j_direction)) {
         case (1*Shift + 2):
             for (int x = 0; x < I; x++) {
                 U *= GetLink(i+x, j, k, l, 1);
@@ -1145,18 +1162,14 @@ template <template <typename _Float, class _PrngClass> class MatrixSU,
         typename Float, class PrngClass>
 double GluodynamicsWithoutBorderDim4_SU_Base
     <MatrixSU, CycledArrayDim4, Float, PrngClass>
-    ::SingleKnot(int a_direction, int b_direction, int c_direction, int d_direction,
+    ::SingleKnot(SignedDirection a_direction, SignedDirection b_direction, SignedDirection c_direction, SignedDirection d_direction,
                   int i, int j, int k, int l) const {
-    if (abs(a_direction) == abs(b_direction) ||
-        abs(a_direction) == abs(c_direction) ||
-        abs(a_direction) == abs(d_direction) ||
-        abs(b_direction) == abs(c_direction) ||
-        abs(b_direction) == abs(d_direction) ||
-        abs(c_direction) == abs(d_direction) ||
-        abs(a_direction) < 1 || abs(a_direction) > 4 ||
-        abs(b_direction) < 1 || abs(b_direction) > 4 ||
-        abs(c_direction) < 1 || abs(c_direction) > 4 ||
-        abs(d_direction) < 1 || abs(d_direction) > 4) {
+    if (abs(int(a_direction)) == abs(int(b_direction)) ||
+        abs(int(a_direction)) == abs(int(c_direction)) ||
+        abs(int(a_direction)) == abs(int(d_direction)) ||
+        abs(int(b_direction)) == abs(int(c_direction)) ||
+        abs(int(b_direction)) == abs(int(d_direction)) ||
+        abs(int(c_direction)) == abs(int(d_direction))) {
         throw invalid_argument("PeriodicSingleKnot_WRONGPARAMETERS");
     }
 
@@ -1164,10 +1177,10 @@ double GluodynamicsWithoutBorderDim4_SU_Base
     for (int step = 0; step < 4; step++) {
         A[step] = B[step] = C[step] = D[step] = 0;
     }
-    A[abs(a_direction) - 1] += (a_direction > 0) ? +1 : -1;
-    B[abs(b_direction) - 1] += (b_direction > 0) ? +1 : -1;
-    C[abs(c_direction) - 1] += (c_direction > 0) ? +1 : -1;
-    D[abs(d_direction) - 1] += (d_direction > 0) ? +1 : -1;
+    A[abs(int(a_direction)) - 1] += (int(a_direction) > 0) ? +1 : -1;
+    B[abs(int(b_direction)) - 1] += (int(b_direction) > 0) ? +1 : -1;
+    C[abs(int(c_direction)) - 1] += (int(c_direction) > 0) ? +1 : -1;
+    D[abs(int(d_direction)) - 1] += (int(d_direction) > 0) ? +1 : -1;
 
     MatrixSU<Float, PrngClass> U(0);
     U *= GetLink(i, j, k, l, a_direction) *
@@ -1248,6 +1261,10 @@ class PeriodicGluodynamicsDim4_SU : public GluodynamicsWithoutBorderDim4_SU_Base
 
         MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
                                                             int direction) const override;
+        MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                           SignedDirection direction) const override;
+        MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                           UnsignedDirection direction) const override;
 
 
         friend ofstream &operator<<
@@ -1346,6 +1363,23 @@ MatrixSU<Float, PrngClass> PeriodicGluodynamicsDim4_SU<MatrixSU,
     }
 }
 
+template <template <typename _Float, class _PrngClass> class MatrixSU,
+        template <typename Node> class SafeArrayDim4,
+        typename Float, class PrngClass>
+MatrixSU<Float, PrngClass> PeriodicGluodynamicsDim4_SU<MatrixSU,
+        SafeArrayDim4, Float, PrngClass>
+::GetLink   (int x, int y, int z, int t, SignedDirection direction) const {
+    return GetLink(x, y, z, t, int(direction));
+}
+
+template <template <typename _Float, class _PrngClass> class MatrixSU,
+        template <typename Node> class SafeArrayDim4,
+        typename Float, class PrngClass>
+MatrixSU<Float, PrngClass> PeriodicGluodynamicsDim4_SU<MatrixSU,
+        SafeArrayDim4, Float, PrngClass>
+::GetLink   (int x, int y, int z, int t, UnsignedDirection direction) const {
+    return GetLink(x, y, z, t, int(direction));
+}
 
 
 
@@ -1579,6 +1613,10 @@ class xReflectionGluodynamicsDim4_SU : public GluodynamicsWithoutBorderDim4_SU_B
 
         MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
                                                             int direction) const override;
+        MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                                   SignedDirection direction) const override;
+        MatrixSU<Float, PrngClass> GetLink(int x, int y, int z, int t,
+                                                   UnsignedDirection direction) const override;
 
         friend ofstream &operator<<
             <MatrixSU, SafeArrayDim4, Float, PrngClass>
@@ -1706,6 +1744,25 @@ MatrixSU<Float, PrngClass> xReflectionGluodynamicsDim4_SU<MatrixSU,
             return m[x][y][z][t].copy_of_up(-direction).Inversed();
         }
     }
+}
+
+
+template <template <typename _Float, class _PrngClass> class MatrixSU,
+        template <typename Node> class SafeArrayDim4,
+        typename Float, class PrngClass>
+MatrixSU<Float, PrngClass> xReflectionGluodynamicsDim4_SU<MatrixSU,
+        SafeArrayDim4, Float, PrngClass>
+::GetLink   (int x, int y, int z, int t, SignedDirection direction) const {
+    return GetLink(x, y, z, t, int(direction));
+}
+
+template <template <typename _Float, class _PrngClass> class MatrixSU,
+        template <typename Node> class SafeArrayDim4,
+        typename Float, class PrngClass>
+MatrixSU<Float, PrngClass> xReflectionGluodynamicsDim4_SU<MatrixSU,
+        SafeArrayDim4, Float, PrngClass>
+::GetLink   (int x, int y, int z, int t, UnsignedDirection direction) const {
+    return GetLink(x, y, z, t, int(direction));
 }
 
 

@@ -3,6 +3,11 @@
 #include <random>
 #include <thread>
 #include <exception>
+#include <vector>
+#include <map>
+#include <tuple>
+#include <algorithm>
+#include <iomanip>
 
 #include "main.h"
 #include "MatrixSU2.h"
@@ -15,12 +20,12 @@ using namespace std;
 
 
 
-typedef PeriodicGluodynamicsDim4_SU<MatrixSU3, DynamicUnsafeArrayDim4,
+typedef xReflectionGluodynamicsDim4_SU<MatrixSU2, DynamicUnsafeArrayDim4,
                     float, ranlux24> Gluodynamics;
-const int matr_dim = 3;
-const char bc_code = 'p'; //boundary conditions code
+const int matr_dim = 2;
+const char bc_code = 'x'; //boundary conditions code
 const char working_directory[500] =
-    "/media/dimaros/LinuxDATA/GluodynamicsDATA/perSU3_3334_580_pseudo/";
+    "/media/dimaros/LinuxDATA/GluodynamicsDATA/creutz_test_v4_SU2/";
 const char system_preconfiguration_file_format[500] =
     "%s%d%d%d%d%cSU%dSystem_%d.save";
 const char system_log_file_for_beta_format[500] =
@@ -33,6 +38,8 @@ const char system_measurements_file_format[500] =
     "%sMeasured_%d%d%d%doutput_%cSU%d_%u_%d.csv";
 const char system_autocorrelations_for_beta_file_format[500] =
     "%sAutocorrelations_%d%d%d%doutput_%cSU%d_%u_%d_%d.csv";
+const char system_wilson_loops_for_beta_file_format[500] =
+    "%sWilsonLoopsRaw_%d_%d%d%d%dSystem_%cSU%d_%d.save";
 const char system_single_measurement_file_format[500] =
     "%sMeasured%d_%d%d%d%dSystem_%cSU%d_%d_%d.save";
 //   /media/dimaros/LinuxDATA/
@@ -135,7 +142,7 @@ void EquilibrateForBeta_ThreadFunction(unsigned int key, int iBeta, int seed, in
 
         double s = 1.0 + System.Action() * g0 * g0 / 2 / (matr_dim) / N1 / N2 / N3 / N4 / 6;
 
-        cout << "eq " << beta << '\t' << t + int(T_preequilibration / tau) << '\t' << s << '\t'
+        cout << "eq " << beta << '\t' << t << '\t' << s << '\t'
              << hit_ratio << "\t\t"
              << (int) 4 * tau * N1 * N2 * N3 * N4 / hit_ratio / diff_time.count()
              << " hits/sec" << endl;
@@ -237,6 +244,13 @@ double Average (double **s, int i_max, int j_max) {
 }
 
 
+template <typename Iterator>
+double Average (Iterator first, Iterator last) {
+    return double(accumulate(first, last, 0.0))/distance(first, last);
+}
+
+
+
 
 double Variance (double **s, int i_max, int j_max) {
     double s_av = Average(s, i_max, j_max);
@@ -252,7 +266,73 @@ double Variance (double **s, int i_max, int j_max) {
     return s_var;
 }
 
+template <typename Iterator>
+double Variance (Iterator first, Iterator last) {
+    size_t N = distance(first, last);
+    if (N <= 1) {
+        throw runtime_error("Need at lest two values to calculate variance");
+    }
 
+    vector<double> tmp;
+    copy(first, last, back_inserter(tmp));
+
+    double mean = Average(first, last);
+//    cout << '\n' << "Inside Variance: mean = " << mean << '\n';
+    transform(tmp.begin(), tmp.end(), tmp.begin(), [mean](const double &value){return (value - mean) * (value - mean);});
+//    for (const auto &value : tmp) {
+//        cout << value << ' ';
+//    }
+//    cout << '\n';
+
+    return accumulate(tmp.begin(), tmp.end(), 0.0)/double(N-1);
+}
+
+
+template <typename Iterator>
+auto Autocorrelation(Iterator first, Iterator last) {
+    size_t N = distance(first, last);
+    if (N <= 10) {
+        throw runtime_error("Need range to have at least 10 elements to calculate autocorrelations");
+    }
+
+    vector<double> values_copy;
+    copy(first, last, back_inserter(values_copy));
+
+    double mean = Average(first, last);
+    double stand_div = sqrt(Variance(values_copy.begin(), values_copy.end()));
+
+    vector<double> timecorr_normed;
+    for (size_t diff = 0; diff < N/3; diff++) {
+        timecorr_normed.push_back(inner_product(
+                values_copy.begin(),
+                prev(values_copy.end(), diff),
+                next(values_copy.begin(), diff),
+                0.0) / double(N - diff)/mean/mean);
+    }
+    double zero_diff_corr = timecorr_normed[0];
+    for (double &x : timecorr_normed) {
+        x /= zero_diff_corr;
+    }
+
+    int t_corr;
+    for (t_corr = 0; timecorr_normed[t_corr] > 0.368 && t_corr < N/3 -1; t_corr++);
+
+    double tau_corr = 0;
+    if (t_corr <= 1) {
+        tau_corr = 1.0;
+    } else {
+        tau_corr = 0.5;
+        for (int t = 1; t < t_corr-1; t++) {
+            tau_corr += timecorr_normed[t];
+        }
+        tau_corr += timecorr_normed[t_corr-1]/2;
+        tau_corr += (timecorr_normed[t_corr-1]*timecorr_normed[t_corr-1] - 0.135)
+                               /(timecorr_normed[t_corr-1] - timecorr_normed[t_corr])/2;
+        tau_corr /= 0.632;
+    }
+
+    return make_tuple(t_corr, timecorr_normed);
+}
 
 
 
@@ -542,11 +622,13 @@ void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
             for (int i = 1; i < N_loops; i++) {
                 for (int j = 1; j <= i; j++) {
                     chi_jack[thread_id][i][j][t_jack] =
-                    W_jack[thread_id][i][j][t_jack]*W_jack[thread_id][i-1][j-1][t_jack]
-                     /W_jack[thread_id][i-1][j][t_jack]/W_jack[thread_id][i][j-1][t_jack] > 0 ?
-                     -log(W_jack[thread_id][i][j][t_jack]*W_jack[thread_id][i-1][j-1][t_jack]
-                     /W_jack[thread_id][i-1][j][t_jack]/W_jack[thread_id][i][j-1][t_jack]) :
-                      0.0;
+                            (W_jack[thread_id][i][j][t_jack] * W_jack[thread_id][i-1][j-1][t_jack]
+                            / W_jack[thread_id][i-1][j][t_jack] / W_jack[thread_id][i][j-1][t_jack] > 0)
+                         ?
+                             -log(W_jack[thread_id][i][j][t_jack] * W_jack[thread_id][i-1][j-1][t_jack]
+                             / W_jack[thread_id][i-1][j][t_jack] / W_jack[thread_id][i][j-1][t_jack])
+                         :
+                            0.0;
                 }
             }
         }
@@ -576,8 +658,8 @@ void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
     }
     for (int i = 0; i < N_loops; i++) {
         for (int j = 0; j < N_loops; j++) {
-            W_av[i][j] /= threads_per_beta*T_measurement/tau;
-            chi_av[i][j] /= threads_per_beta*T_measurement/tau;
+            W_av[i][j] /= threads_per_beta * T_measurement/tau;
+            chi_av[i][j] /= threads_per_beta * T_measurement/tau;
         }
     }
 
@@ -593,9 +675,9 @@ void ProcessData_CreutzRatioForBeta(unsigned int key, int iBeta, int prev_config
     }
     for (int i = 0; i < N_loops; i++) {
         for (int j = 0; j < N_loops; j++) {
-            W_d[i][j] /= threads_per_beta*(T_measurement/tau)/(T_measurement/tau - 1);
+            W_d[i][j] /= threads_per_beta * (T_measurement/tau)/(T_measurement/tau - 1);
             W_d[i][j] = sqrt(W_d[i][j]);
-            chi_d[i][j] /= threads_per_beta*(T_measurement/tau)/(T_measurement/tau - 1);
+            chi_d[i][j] /= threads_per_beta * (T_measurement/tau)/(T_measurement/tau - 1);
             chi_d[i][j] = sqrt(chi_d[i][j]);
         }
     }
@@ -706,16 +788,16 @@ void CollectData_AverageOrientedWilsonLoopForBeta_ThreadFunction (unsigned int k
 
         s[t] = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
 
-        for (int i_direction = 0; i_direction <= 3; i_direction++) {
-            for (int j_direction = 0; j_direction <= 3; j_direction++) {
+        for (const auto &i_direction : UnsignedDirections) {
+            for (const auto &j_direction : UnsignedDirections) {
                 if (i_direction == j_direction) {
                     continue;
                 }
 
-                W[i_direction][j_direction][t] = System.AverageOrientedWilsonLoop(1, 1,
-                                                i_direction+1, j_direction+1);
+                W[int(i_direction)][int(j_direction)][t] = System.AverageOrientedWilsonLoop(1, 1,
+                                                i_direction, j_direction);
 
-                out_measured.write((const char *) &W[i_direction][j_direction][t],
+                out_measured.write((const char *) &W[int(i_direction)][int(j_direction)][t],
                                    sizeof(double));
             }
         }
@@ -985,11 +1067,11 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
 //                                            + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Y, i, j, k, timeslice)
 //                                            + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Z, i, j, k, timeslice)
 //                                            + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::Y, UnsignedDirection::Z, i, j, k, timeslice);
                         }
                     }
                 }
@@ -1014,11 +1096,11 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v1 (unsigned int key,
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
     //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Y, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Z, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 2, 3, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::Y, UnsignedDirection::Z, i, j, k, timeslice);
                         }
                     }
                 }
@@ -1606,11 +1688,11 @@ void CollectData_ScalarGlueballForBeta_ThreadFunction_v2 (unsigned int key,
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
     //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 2, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Y, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 1, 3, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 1, 3, i, j, k, timeslice)
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::X, UnsignedDirection::Z, i, j, k, timeslice)
     //                                        + System.SingleWilsonLoop(3, 3, 1, 2, i, j, k, timeslice)
-                                            + System.SingleWilsonLoop(1, 1, 2, 3, i, j, k, timeslice);
+                                            + System.SingleWilsonLoop(1, 1, UnsignedDirection::Y, UnsignedDirection::Z, i, j, k, timeslice);
                         }
                     }
                 }
@@ -2105,30 +2187,30 @@ void CollectData_PseudoScalarGlueballForBeta_ThreadFunction (unsigned int key,
                     for (int j = 0; j < N2; j++) {
                         for (int k = 0; k < N3; k++) {
                             timeslice_observable[timeslice][t] +=
-                                    +System.SingleKnot(1, 4, 3, -2, i, j, k, timeslice)
-                                    +System.SingleKnot(-3, 4, -1, 2, i, j, k, timeslice)
-                                    +System.SingleKnot(3, 4, 2, -1, i, j, k, timeslice)
-                                    +System.SingleKnot(-2, 4, -3, 1, i, j, k, timeslice)
-                                    +System.SingleKnot(2, 4, 1, -3, i, j, k, timeslice)
-                                    +System.SingleKnot(-1, 4, -2, 3, i, j, k, timeslice)
-                                    +System.SingleKnot(3, 4, -1, -2, i, j, k, timeslice)
-                                    +System.SingleKnot(1, 4, -3, 2, i, j, k, timeslice)
-                                    +System.SingleKnot(2, 4, -3, -1, i, j, k, timeslice)
-                                    +System.SingleKnot(3, 4, -2, 1, i, j, k, timeslice)
-                                    +System.SingleKnot(1, 4, -2, -3, i, j, k, timeslice)
-                                    +System.SingleKnot(2, 4, -1, 3, i, j, k, timeslice)
-                                    +System.SingleKnot(-3, 4, 1, -2, i, j, k, timeslice)
-                                    +System.SingleKnot(-1, 4, 3, 2, i, j, k, timeslice)
-                                    +System.SingleKnot(-2, 4, 3, -1, i, j, k, timeslice)
-                                    +System.SingleKnot(-3, 4, 2, 1, i, j, k, timeslice)
-                                    +System.SingleKnot(-1, 4, 2, -3, i, j, k, timeslice)
-                                    +System.SingleKnot(-2, 4, 1, 3, i, j, k, timeslice)
-                                    +System.SingleKnot(-1, 4, -3, -2, i, j, k, timeslice)
-                                    +System.SingleKnot(3, 4, 1, 2, i, j, k, timeslice)
-                                    +System.SingleKnot(-3, 4, -2, -1, i, j, k, timeslice)
-                                    +System.SingleKnot(2, 4, 3, 1, i, j, k, timeslice)
-                                    +System.SingleKnot(-2, 4, -1, -3, i, j, k, timeslice)
-                                    +System.SingleKnot(1, 4, 2, 3, i, j, k, timeslice);
+                                    +System.SingleKnot(SignedDirection(1), SignedDirection(4), SignedDirection(3), SignedDirection(-2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-3), SignedDirection(4), SignedDirection(-1), SignedDirection(2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(3), SignedDirection(4), SignedDirection(2), SignedDirection(-1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-2), SignedDirection(4), SignedDirection(-3), SignedDirection(1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(2), SignedDirection(4), SignedDirection(1), SignedDirection(-3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-1), SignedDirection(4), SignedDirection(-2), SignedDirection(3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(3), SignedDirection(4), SignedDirection(-1), SignedDirection(-2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(1), SignedDirection(4), SignedDirection(-3), SignedDirection(2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(2), SignedDirection(4), SignedDirection(-3), SignedDirection(-1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(3), SignedDirection(4), SignedDirection(-2), SignedDirection(1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(1), SignedDirection(4), SignedDirection(-2), SignedDirection(-3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(2), SignedDirection(4), SignedDirection(-1), SignedDirection(3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-3), SignedDirection(4), SignedDirection(1), SignedDirection(-2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-1), SignedDirection(4), SignedDirection(3), SignedDirection(2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-2), SignedDirection(4), SignedDirection(3), SignedDirection(-1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-3), SignedDirection(4), SignedDirection(2), SignedDirection(1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-1), SignedDirection(4), SignedDirection(2), SignedDirection(-3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-2), SignedDirection(4), SignedDirection(1), SignedDirection(3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-1), SignedDirection(4), SignedDirection(-3), SignedDirection(-2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(3), SignedDirection(4), SignedDirection(1), SignedDirection(2), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-3), SignedDirection(4), SignedDirection(-2), SignedDirection(-1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(2), SignedDirection(4), SignedDirection(3), SignedDirection(1), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(-2), SignedDirection(4), SignedDirection(-1), SignedDirection(-3), i, j, k, timeslice)
+                                    +System.SingleKnot(SignedDirection(1), SignedDirection(4), SignedDirection(2), SignedDirection(3), i, j, k, timeslice);
                         }
                     }
                 }
@@ -2560,6 +2642,334 @@ void ProcessData_PseudoScalarGlueballForBeta (unsigned int key, int iBeta, int m
 
 
 
+void CollectData_CreutzRatioForBeta_NoConfigurationSaving_ThreadFunction(unsigned int key,
+                                       int iBeta, int thread_id, int prev_config_number) {
+    auto beta = float(0.01 * iBeta);
+    float g0 = sqrt(2 * (matr_dim) / beta);
+    Gluodynamics System(N1, N2, N3, N4, 0, g0, key);
+
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory,
+            N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, thread_id);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+
+    char file_name_in[500];
+    sprintf(file_name_in, system_configuration_file_format, working_directory,
+            iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id, prev_config_number);
+    ifstream in_sys(file_name_in, ios::in | ios::binary);
+    in_sys >> System;
+    in_sys.close();
+
+    map<tuple<UnsignedDirection, UnsignedDirection, size_t, size_t>, vector<double>> average_oriented_loops;
+
+    for (int t = 0; t < int(T_measurement/tau); t++) {
+        chrono::time_point<chrono::high_resolution_clock>
+                start_time = chrono::high_resolution_clock::now();
+
+        float hit_ratio = System.MonteCarloStep(tau, multihit_number);
+
+
+        chrono::time_point<chrono::high_resolution_clock>
+                end_time = chrono::high_resolution_clock::now();
+        chrono::duration<double> diff_time = end_time - start_time;
+
+
+        double s = 1.0 + System.Action()*g0*g0/2/(matr_dim)/N1/N2/N3/N4/6;
+
+        for (const UnsignedDirection &i_direction : UnsignedDirections) {
+            for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                if (i_direction == j_direction) {
+                    continue;
+                }
+                for (size_t I = 1; I <= N_loops; I++) {
+                    for (size_t J = I; J <= N_loops; J++) {
+                        average_oriented_loops[{i_direction, j_direction, I, J}].push_back(
+                                System.AverageOrientedWilsonLoop(I, J, i_direction, j_direction));
+                    }
+                }
+            }
+        }
+
+
+
+
+        cout << "config+measure" << '\t' << beta << '\t' << t << '\t' << s << '\t'
+             << hit_ratio << "\t\t"
+             << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count()
+             << " hits/sec"<< endl;
+
+        out_loc << "config+measure," <<  beta << ',' << t << ',' << s << ',' << hit_ratio << ','
+                << (int) 4*tau*N1*N2*N3*N4/hit_ratio/diff_time.count() << '\n';
+        out_loc.close();
+        out_loc.open(out_loc_file_name, ios::out | ios::app);
+    }
+
+    char file_name_out_measured[500];
+
+    sprintf(file_name_out_measured, system_wilson_loops_for_beta_file_format,
+            working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id);
+
+    ofstream out_measured(file_name_out_measured, ios::out | ios::binary | ios::trunc);
+
+    for (int t = 0; t < int(T_measurement/tau); t++) {
+        for (const UnsignedDirection &i_direction : UnsignedDirections) {
+            for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                if (i_direction == j_direction) {
+                    continue;
+                }
+                for (size_t I = 1; I <= N_loops; I++) {
+                    for (size_t J = I; J <= N_loops; J++) {
+                        out_measured.write((const char *) &average_oriented_loops[{i_direction, j_direction, I, J}][t],
+                                           sizeof(double));
+                    }
+                }
+            }
+        }
+    }
+
+    out_measured.close();
+
+    out_loc.close();
+}
+
+
+
+
+void CollectData_CreutzRatioForBeta_NoConfigurationSaving(unsigned int key, int iBeta, int prev_config_number) {
+
+    thread thread_array[threads_per_beta];
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        thread_array[thread_id] =
+                thread(CollectData_CreutzRatioForBeta_NoConfigurationSaving_ThreadFunction, key,
+                       iBeta, thread_id, prev_config_number);
+    }
+
+    for (auto &processing_thread : thread_array) {
+        processing_thread.join();
+    }
+}
+
+
+
+
+
+
+
+
+
+void ProcessData_CreutzRatioForBeta_NoConfigurationSaving(unsigned int key,
+                                                                         int iBeta) {
+    auto beta = float(0.01 * iBeta);
+
+    char out_loc_file_name[500];
+    sprintf(out_loc_file_name, system_log_file_for_beta_format, working_directory,
+            N1, N2, N3, N4, bc_code, matr_dim, key, iBeta, 555);
+    ofstream out_loc(out_loc_file_name, ios::out | ios::app);
+
+
+    map<tuple<UnsignedDirection, UnsignedDirection, size_t, size_t>, vector<double>> average_oriented_loops;
+
+    for (int thread_id = 0; thread_id < threads_per_beta; thread_id++) {
+        char file_name_out_measured[500];
+
+        sprintf(file_name_out_measured, system_wilson_loops_for_beta_file_format,
+                working_directory, iBeta, N1, N2, N3, N4, bc_code, matr_dim, thread_id);
+
+        ifstream in_measured(file_name_out_measured, ios::in | ios::binary);
+
+        for (int t = 0; t < int(T_measurement / tau); t++) {
+            for (const UnsignedDirection &i_direction : UnsignedDirections) {
+                for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                    if (i_direction == j_direction) {
+                        continue;
+                    }
+                    for (size_t I = 1; I <= N_loops; I++) {
+                        for (size_t J = I; J <= N_loops; J++) {
+                            double tmp;
+
+                            in_measured.read((char *) &tmp, sizeof(double));
+
+                            average_oriented_loops[{i_direction, j_direction, I, J}].push_back(tmp);
+                        }
+                    }
+                }
+            }
+        }
+
+        in_measured.close();
+    }
+
+    map<tuple<UnsignedDirection, UnsignedDirection, size_t, size_t>, double> average_oriented_loops_av;
+    map<tuple<UnsignedDirection, UnsignedDirection, size_t, size_t>, double> average_oriented_loops_d;
+
+    for (const UnsignedDirection &i_direction : UnsignedDirections) {
+        for (const UnsignedDirection &j_direction : UnsignedDirections) {
+            if (i_direction == j_direction) {
+                continue;
+            }
+            for (size_t I = 1; I <= N_loops; I++) {
+                for (size_t J = I; J <= N_loops; J++) {
+                    average_oriented_loops_av[{i_direction, j_direction, I, J}] =
+                            Average(average_oriented_loops[{i_direction, j_direction, I, J}].begin(),
+                                    average_oriented_loops[{i_direction, j_direction, I, J}].end());
+                    average_oriented_loops_d[{i_direction, j_direction, I, J}] =
+                            sqrt(Variance(
+                                    average_oriented_loops[{i_direction, j_direction, I, J}].begin(),
+                                    average_oriented_loops[{i_direction, j_direction, I, J}].end()
+                                    ) / average_oriented_loops[{i_direction, j_direction, I, J}].size());
+                }
+            }
+        }
+    }
+
+
+
+
+    map<tuple<size_t, size_t>, vector<double>> average_loops_jack;
+    for (size_t I = 1; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            for (int t = 0; t < int(T_measurement/tau) * threads_per_beta; t++) {
+                double jack_value = 0.0;
+
+                for (const UnsignedDirection &i_direction : UnsignedDirections) {
+                    for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                        if (i_direction == j_direction) {
+                            continue;
+                        }
+
+                        jack_value += average_oriented_loops_av[{i_direction, j_direction, I, J}] *
+                                T_measurement/tau * threads_per_beta
+                                - average_oriented_loops[{i_direction, j_direction, I, J}][t];
+                    }
+                }
+
+                jack_value /= 12 * (T_measurement/tau * threads_per_beta - 1);
+
+                average_loops_jack[{I, J}].push_back(jack_value);
+            }
+        }
+    }
+
+    for (size_t I = 1; I <= N_loops; I++) {
+        for (size_t J = 1; J < I; J++) {
+            average_loops_jack[{I, J}] = average_loops_jack[{J, I}];
+        }
+    }
+
+
+
+    map<tuple<size_t, size_t>, vector<double>> chi_jack;
+    map<tuple<size_t, size_t>, size_t> chi_jack_NaNs_counter;
+    for (size_t I = 2; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            chi_jack_NaNs_counter[{I, J}] = 0;
+            for (int t = 0; t < int(T_measurement/tau) * threads_per_beta; t++) {
+                if (average_loops_jack[{I, J}][t] * average_loops_jack[{I-1, J-1}][t]
+                    / average_loops_jack[{I-1, J}][t] / average_loops_jack[{I, J-1}][t] > 0) {
+                    chi_jack[{I, J}].push_back(-log(average_loops_jack[{I, J}][t] * average_loops_jack[{I-1, J-1}][t]
+                                                    / average_loops_jack[{I-1, J}][t] / average_loops_jack[{I, J-1}][t]));
+                } else {
+                    chi_jack_NaNs_counter[{I, J}]++;
+                }
+            }
+        }
+    }
+
+
+    map<tuple<size_t, size_t>, double> chi_av;
+    map<tuple<size_t, size_t>, double> chi_d;
+    for (size_t I = 2; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            if (chi_jack[{I, J}].size() >= T_measurement/tau * threads_per_beta / 5) {
+                chi_av[{I, J}] = Average(chi_jack[{I, J}].begin(), chi_jack[{I, J}].end());
+                chi_d[{I, J}] = sqrt(chi_jack[{I, J}].size() * Variance(chi_jack[{I, J}].begin(), chi_jack[{I, J}].end()));
+            } else {
+                chi_av[{I, J}] = NAN;
+                chi_d[{I, J}] = NAN;
+            }
+        }
+    }
+
+
+
+
+    char output_file_name[500];
+    sprintf(output_file_name, system_measurements_file_format,
+            working_directory, N1, N2, N3, N4, bc_code, matr_dim, key, iBeta);
+    ofstream out(output_file_name, ios::out | ios::app);
+
+
+    out << beta << '\n' << "W(I| J),";
+    for (const UnsignedDirection &i_direction : UnsignedDirections) {
+        for (const UnsignedDirection &j_direction : UnsignedDirections) {
+            if (i_direction == j_direction) {
+                continue;
+            }
+
+            out << "{i_dir | j_dir} = {" << int(i_direction) << '|' << int(j_direction) << "},";
+        }
+    }
+    out << '\n';
+
+    for (size_t I = 1; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            out << "W(" << I << "| " << J << ")_av,";
+            for (const UnsignedDirection &i_direction : UnsignedDirections) {
+                for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                    if (i_direction == j_direction) {
+                        continue;
+                    }
+
+                    out << average_oriented_loops_av[{i_direction, j_direction, I, J}] << ',';
+                }
+            }
+            out << '\n';
+
+            out << "W(" << I << "| " << J << ")_d,";
+            for (const UnsignedDirection &i_direction : UnsignedDirections) {
+                for (const UnsignedDirection &j_direction : UnsignedDirections) {
+                    if (i_direction == j_direction) {
+                        continue;
+                    }
+
+                    out << average_oriented_loops_d[{i_direction, j_direction, I, J}] << ',';
+                }
+            }
+            out << '\n';
+
+            out << '\n';
+        }
+    }
+    out << "\n\n\n\n\n";
+    for (size_t I = 2; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            out << "chi_av(" << I << "| " << J << "), chi_d(" << I << "| " << J << "),";
+        }
+    }
+    out << '\n';
+    for (size_t I = 2; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            out << chi_av[{I, J}] << ',' << chi_d[{I, J}] << ',';
+        }
+    }
+    out << '\n';
+    for (size_t I = 2; I <= N_loops; I++) {
+        for (size_t J = I; J <= N_loops; J++) {
+            out << chi_jack_NaNs_counter[{I, J}]/(T_measurement/tau * threads_per_beta) << ",,";
+        }
+    }
+
+
+
+
+
+    out.close();
+
+
+    out_loc.close();
+}
 
 
 
@@ -2606,7 +3016,7 @@ void CollectData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(CollectData_PseudoScalarGlueballForBeta,
+        beta_threads[t] = thread(CollectData_CreutzRatioForBeta_NoConfigurationSaving,
                 key, iBeta_low + t*iBeta_step, prev_config_number);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
@@ -2618,8 +3028,8 @@ void ProcessData(unsigned int key, int prev_config_number) {
     thread beta_threads[(iBeta_high - iBeta_low)/iBeta_step + 1];
 
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
-        beta_threads[t] = thread(ProcessData_PseudoScalarGlueballForBeta, key, iBeta_low + t*iBeta_step,
-                1, 0.0, 0.0, prev_config_number);
+        beta_threads[t] = thread(ProcessData_CreutzRatioForBeta_NoConfigurationSaving, key, iBeta_low + t*iBeta_step/*,
+                1, 0.0, 0.0, prev_config_number*/);
     }
     for (int t = 0; t <= (iBeta_high - iBeta_low)/iBeta_step; t++) {
         beta_threads[t].join();
@@ -2647,9 +3057,9 @@ int main(int argc, char **argv) {
     PreEquilibration(key);
 
     Equilibration(key);
-
-    CreateMeasurementConfigurations(key, 0);
-
+//
+//    CreateMeasurementConfigurations(key, 0);
+//
     CollectData(key, 0);
 
     ProcessData(key, 0);
@@ -2662,7 +3072,7 @@ int main(int argc, char **argv) {
 
 
 
-
+//
 //    int thread_id;
 //    unsigned int external_key;
 //    sscanf(argv[1], "%u", &external_key);
@@ -2682,9 +3092,8 @@ int main(int argc, char **argv) {
 
 
 
-
-
-
+//    vector<double> v{1,2,1,2,1,2};
+//    cout << Average(v.begin(), v.end()) << '\n' << Variance(v.begin(), v.end()) << endl;
 
 
 
